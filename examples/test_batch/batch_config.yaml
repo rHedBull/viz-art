@@ -1,0 +1,38 @@
+pipeline_name: "test-batch-pipeline"
+
+output_dir: "./examples/test_batch/output"
+
+stages:
+  - name: "loader"
+    stage_type: "ImageLoader"
+    config:
+      resize: [640, 480]
+
+  - name: "grayscale"
+    stage_type: "GrayscaleStage"
+    config: {}
+
+connections:
+  - source: "loader"
+    target: "grayscale"
+    output_key: "image"
+    input_key: "image"
+
+batch_config:
+  input_dir: "./examples/test_batch/input"
+  output_dir: "./examples/test_batch/output"
+  file_patterns:
+    - "*.jpg"
+    - "*.jpeg"
+    - "*.png"
+  recursive: true
+  continue_on_error: true
+  report_output: "batch_report.html"
+
+  # Output saving configuration
+  output_mode: "sample"
+  save_outputs:
+    enabled: true
+    stages: ["all"]
+    max_samples: 10
+    format: "png"
