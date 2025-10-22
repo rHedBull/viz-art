@@ -4,7 +4,7 @@ This module defines the abstract base class that all pipeline stages must inheri
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 
 class PipelineStage(ABC):
@@ -123,6 +123,34 @@ class PipelineStage(ABC):
             ValueError: If output formatting fails
         """
         ...
+
+    @property
+    def input_data_types(self) -> Optional[Dict[str, type]]:
+        """Return expected types for each input key (optional, for type validation).
+
+        Returns:
+            Dict mapping input keys to expected types, or None if not specified.
+            Example: {"image_path": str, "threshold": float}
+
+        Note:
+            This is an optional property for compile-time type checking.
+            Stages can override this to enable pipeline type validation.
+        """
+        return None
+
+    @property
+    def output_data_types(self) -> Optional[Dict[str, type]]:
+        """Return expected types for each output key (optional, for type validation).
+
+        Returns:
+            Dict mapping output keys to expected types, or None if not specified.
+            Example: {"pointcloud": object, "points": np.ndarray}
+
+        Note:
+            This is an optional property for compile-time type checking.
+            Stages can override this to enable pipeline type validation.
+        """
+        return None
 
     def __repr__(self) -> str:
         """Return string representation of stage."""

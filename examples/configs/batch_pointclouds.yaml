@@ -1,0 +1,97 @@
+# Batch processing configuration for point cloud thumbnails
+# Processes multiple point clouds and generates HTML report with thumbnails
+
+pipeline_name: "batch-pointcloud-thumbnails"
+output_dir: "./output/batch_pointclouds"
+
+stages:
+  - name: pointcloud_loader
+    stage_type: PointCloudLoader
+    config:
+      downsample_voxel_size: 0.05  # 5cm voxels for performance
+      remove_outliers: true
+      outlier_neighbors: 20
+      outlier_std_ratio: 2.0
+
+  - name: validator
+    stage_type: PointCloudValidationStage
+    config:
+      rules:
+        min_points: 100
+        max_points: 10000000
+        check_nan: true
+        check_inf: true
+        fail_fast: false
+      raise_on_invalid: false  # Continue on validation errors
+
+  - name: thumbnail_generator
+    stage_type: PointCloudThumbnailStage
+    config:
+      viewpoints: ["diagonal", "front", "top"]  # Multiple viewpoints
+      width: 800
+      height: 600
+      point_size: 2.0
+      background_color: [1.0, 1.0, 1.0]
+
+  - name: visualization
+    stage_type: PointCloudVisualizationStage
+    config:
+      color_mode: "height"
+      point_size: 2.0
+      opacity: 0.8
+      colorscale: "Viridis"
+      max_render_points: 500000  # Auto-downsample for WebGL
+      output_html: true
+      output_json: false
+
+connections:
+  - from: pointcloud_loader
+    to: validator
+    mapping:
+      points: points
+      colors: colors
+
+  - from: validator
+    to: thumbnail_generator
+    mapping:
+      points: points
+      colors: colors
+
+  - from: validator
+    to: visualization
+    mapping:
+      points: points
+      colors: colors
+
+batch_config:
+  input_dir: "./data/pointclouds"
+  output_dir: "./output/batch_pointclouds"
+
+  # File patterns to process
+  file_patterns:
+    - "*.pcd"
+    - "*.ply"
+    - "*.xyz"
+
+  # Search subdirectories
+  recursive: true
+
+  # Continue even if some files fail
+  continue_on_error: true
+
+  # HTML report output
+  report_output: "pointcloud_batch_report.html"
+
+  # Output saving configuration
+  output_mode: "all"  # Save all outputs
+  save_outputs:
+    enabled: true
+    stages: ["all"]
+    max_samples: 100  # Save up to 100 results
+    format: "ply"  # Save point clouds as .ply
+
+# Performance notes:
+# - Thumbnail generation uses caching to avoid re-rendering
+# - Large point clouds (>100K points) are auto-downsampled
+# - WebGL visualization auto-downsamples to 500K points max
+# - Expected processing time: 3-5s per point cloud

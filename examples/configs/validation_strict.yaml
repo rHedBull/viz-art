@@ -1,0 +1,62 @@
+# Strict validation configuration for point cloud quality checks
+# This config demonstrates comprehensive validation with strict rules
+
+pipeline_name: "pointcloud-strict-validation"
+output_dir: "./output/validation_strict"
+
+stages:
+  - name: pointcloud_loader
+    stage_type: PointCloudLoader
+    config:
+      downsample_voxel_size: 0.05  # 5cm voxels
+      remove_outliers: true
+      outlier_neighbors: 20
+      outlier_std_ratio: 2.0
+
+  - name: validator
+    stage_type: PointCloudValidationStage
+    config:
+      # Validation rules
+      rules:
+        # Point count constraints
+        min_points: 1000          # Minimum 1000 points
+        max_points: 2000000       # Maximum 2M points
+
+        # Data quality checks
+        check_nan: true           # Reject NaN values
+        check_inf: true           # Reject Inf values
+
+        # Coordinate range limits (meters)
+        coord_range_min: [-50.0, -50.0, -10.0]  # X, Y, Z min
+        coord_range_max: [50.0, 50.0, 50.0]     # X, Y, Z max
+
+        # Error handling
+        fail_fast: false          # Check all rules before failing
+        log_level: "error"        # Log level: error/warning/info
+
+      # Whether to raise exception on validation failure
+      raise_on_invalid: true
+
+connections:
+  - from: pointcloud_loader
+    to: validator
+    mapping:
+      pointcloud: pointcloud
+
+batch_config:
+  input_dir: "./data/pointclouds"
+  output_dir: "./output/validation_strict"
+  file_patterns:
+    - "*.pcd"
+    - "*.ply"
+    - "*.xyz"
+  recursive: true
+  continue_on_error: true  # Continue even if some files fail validation
+  report_output: "validation_report.html"
+
+  output_mode: "sample"
+  save_outputs:
+    enabled: true
+    stages: ["validator"]
+    max_samples: 10
+    format: "ply"

@@ -1,0 +1,38 @@
+# Example camera calibration file for point cloud projection
+# Format: YAML with intrinsic and extrinsic parameters
+
+camera_name: "front_camera"
+calibration_date: "2025-10-22"
+calibration_method: "opencv_checkerboard"
+
+# Intrinsic parameters (camera internal properties)
+intrinsics:
+  # Focal lengths (pixels)
+  fx: 525.0
+  fy: 525.0
+
+  # Principal point (optical center in pixels)
+  cx: 319.5
+  cy: 239.5
+
+  # Image dimensions (pixels)
+  width: 640
+  height: 480
+
+  # Distortion coefficients [k1, k2, p1, p2, k3]
+  # k1, k2, k3: radial distortion
+  # p1, p2: tangential distortion
+  distortion_coeffs: [0.0, 0.0, 0.0, 0.0, 0.0]
+
+# Extrinsic parameters (camera pose in world)
+extrinsics:
+  # 3x3 rotation matrix (row-major)
+  # Identity = no rotation
+  rotation_matrix:
+    - [1.0, 0.0, 0.0]
+    - [0.0, 1.0, 0.0]
+    - [0.0, 0.0, 1.0]
+
+  # 3x1 translation vector [x, y, z] in meters
+  # Zero = camera at world origin
+  translation_vector: [0.0, 0.0, 0.0]

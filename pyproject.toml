@@ -11,6 +11,10 @@ dependencies = [
     "opencv-python>=4.8",
     "jinja2>=3.1",
     "numpy>=1.24",
+    # Phase 2: Multi-modal visualization support
+    "open3d>=0.18",
+    "plotly>=5.0",
+    "numpydantic>=1.6",
 ]
 
 [project.optional-dependencies]

@@ -1,0 +1,63 @@
+# Simple Point Cloud Processing Pipeline
+# Demonstrates loading and validating point clouds
+
+pipeline_name: "pointcloud-simple"
+output_dir: "./output/pointcloud_simple"
+
+stages:
+  # Stage 1: Load point cloud with preprocessing
+  - name: pc_loader
+    stage_type: PointCloudLoader
+    config:
+      downsample_voxel_size: 0.05  # 5cm voxels (set to null to disable)
+      remove_outliers: true
+      outlier_neighbors: 20
+      outlier_std_ratio: 2.0
+      validation_rules:
+        min_points: 100
+        max_points: 2000000
+        check_nan: true
+        check_inf: true
+        fail_fast: false
+
+  # Stage 2: Validate point cloud quality
+  - name: validator
+    stage_type: PointCloudValidationStage
+    config:
+      rules:
+        min_points: 50  # After downsampling, may have fewer points
+        max_points: 1000000
+        check_nan: true
+        check_inf: true
+        coord_range_min: [-100.0, -100.0, -10.0]  # XYZ min bounds (optional)
+        coord_range_max: [100.0, 100.0, 50.0]      # XYZ max bounds (optional)
+        fail_fast: false
+        log_level: "error"
+      raise_on_invalid: false  # Don't stop pipeline on validation failure
+
+connections:
+  - from_stage: pc_loader
+    from_key: pointcloud
+    to_stage: validator
+    to_key: pointcloud
+
+# Batch processing configuration
+batch_config:
+  input_dir: "./data/pointclouds"
+  output_dir: "./output/pointcloud_simple"
+  file_patterns:
+    - "*.pcd"
+    - "*.ply"
+    - "*.xyz"
+  recursive: false
+  continue_on_error: true
+  report_output: "pointcloud_report.html"
+
+  # Output saving configuration
+  output_mode: "sample"  # "sample", "validation", or "production"
+  save_outputs:
+    enabled: true
+    stages: ["all"]  # Save outputs from all stages
+    max_samples: 10
+    format: "png"  # For images
+    pointcloud_format: "ply"  # For point clouds (.ply supports colors/normals)

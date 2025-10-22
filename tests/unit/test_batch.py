@@ -367,7 +367,8 @@ class TestHTMLReporter:
         )
 
         reporter = HTMLReporter()
-        stages_data = reporter._organize_by_stage(batch_result)
+        report_path = tmp_path / "test_report.html"
+        stages_data = reporter._organize_by_stage(batch_result, report_path)
 
         assert "loader" in stages_data
         assert "filter" in stages_data

@@ -1,0 +1,83 @@
+# Multi-modal pipeline configuration: Image and Point Cloud stages
+# Demonstrates stage-by-stage output inspection for multiple data types
+
+pipeline_name: "multimodal-demo"
+output_dir: "./output/multimodal"
+
+stages:
+  # Image processing stage
+  - name: image_loader
+    stage_type: ImageLoader
+    config:
+      resize: [640, 480]
+      color_mode: RGB
+
+  # Convert to grayscale for demonstration
+  - name: grayscale
+    stage_type: GrayscaleStage
+    config:
+      method: "average"
+
+  # Point cloud loading stage
+  - name: pc_loader
+    stage_type: PointCloudLoader
+    config:
+      downsample_voxel_size: 0.05  # 5cm voxels
+      remove_outliers: true
+      outlier_neighbors: 20
+      outlier_std_ratio: 2.0
+
+  # Point cloud validation stage
+  - name: pc_validation
+    stage_type: PointCloudValidationStage
+    config:
+      min_points: 100
+      max_points: 2000000
+      check_nan: true
+      check_inf: true
+      fail_fast: false
+
+  # Point cloud visualization stage
+  - name: pc_viz
+    stage_type: PointCloudVisualizationStage
+    config:
+      color_mode: "height"
+      colorscale: "Viridis"
+      point_size: 3.0
+      opacity: 0.8
+      auto_downsample: true
+      max_render_points: 100000
+
+  # Point cloud thumbnail generation
+  - name: pc_thumbnail
+    stage_type: PointCloudThumbnailStage
+    config:
+      viewpoints: ["front", "top", "diagonal"]
+      width: 800
+      height: 600
+      point_size: 2.0
+
+# No connections - all stages run independently for their input types
+connections: []
+
+# Batch configuration
+batch_config:
+  input_dir: "./data/multimodal"
+  output_dir: "./output/multimodal"
+  file_patterns:
+    - "*.jpg"
+    - "*.png"
+    - "*.pcd"
+    - "*.ply"
+  recursive: true
+  continue_on_error: true
+  report_output: "multimodal_report.html"
+
+  # Output saving configuration
+  output_mode: "sample"
+  save_outputs:
+    enabled: true
+    stages: ["all"]
+    max_samples: 10
+    format: "png"
+    pointcloud_format: "ply"

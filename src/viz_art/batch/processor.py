@@ -1,8 +1,8 @@
-"""Batch processing of images through a pipeline.
+"""Batch processing of images and point clouds through a pipeline.
 
-This module provides the BatchProcessor class for processing multiple images
-from a directory through a configured pipeline, with error handling and
-result aggregation.
+This module provides the BatchProcessor class for processing multiple files
+(images or point clouds) from a directory through a configured pipeline,
+with error handling and result aggregation.
 """
 
 from pathlib import Path
@@ -20,11 +20,13 @@ logger = logging.getLogger(__name__)
 
 
 class BatchProcessor:
-    """Process multiple images through a pipeline with error handling.
+    """Process multiple files (images/point clouds) through a pipeline with error handling.
 
-    The BatchProcessor discovers images in a directory, processes each through
+    The BatchProcessor discovers files in a directory, processes each through
     a pipeline, and aggregates results. It supports continue-on-error behavior
-    to ensure one bad image doesn't stop the entire batch.
+    to ensure one bad file doesn't stop the entire batch.
+
+    Supports both image files (.jpg, .png, etc.) and point cloud files (.pcd, .ply, .xyz).
 
     Example:
         >>> from viz_art.config.loader import load_config
@@ -33,15 +35,21 @@ class BatchProcessor:
         >>> pipeline = Pipeline.from_config(config)
         >>> processor = BatchProcessor(pipeline, config.batch_config)
         >>> result = processor.run()
-        >>> print(f"Processed {result.successful}/{result.total_files} images")
+        >>> print(f"Processed {result.successful}/{result.total_files} files")
 
     Attributes:
-        pipeline: Configured Pipeline instance to process images
+        pipeline: Configured Pipeline instance to process files
         config: Batch processing configuration
     """
 
     # Common image file extensions
     IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif"}
+
+    # Point cloud file extensions
+    POINTCLOUD_EXTENSIONS = {".pcd", ".ply", ".xyz"}
+
+    # All supported file extensions
+    SUPPORTED_EXTENSIONS = IMAGE_EXTENSIONS | POINTCLOUD_EXTENSIONS
 
     def __init__(self, pipeline: Pipeline, config: BatchConfigItem):
         """Initialize batch processor.
@@ -72,13 +80,14 @@ class BatchProcessor:
         logger.debug(f"OutputSaver initialized in {config.output_mode} mode")
 
     def discover_images(self) -> Generator[Path, None, None]:
-        """Discover image files in input directory.
+        """Discover data files (images/point clouds) in input directory.
 
-        Uses the configured file patterns and recursive setting to find images.
-        Silently skips non-image files (no logging for skipped files).
+        Uses the configured file patterns and recursive setting to find files.
+        Supports both image files (.jpg, .png, etc.) and point cloud files (.pcd, .ply, .xyz).
+        Silently skips unsupported file types (no logging for skipped files).
 
         Yields:
-            Path objects for discovered image files
+            Path objects for discovered files
 
         Raises:
             ValueError: If input directory doesn't exist
@@ -91,7 +100,7 @@ class BatchProcessor:
         if not input_path.is_dir():
             raise ValueError(f"Input path is not a directory: {input_path}")
 
-        logger.info(f"Discovering images in {input_path}")
+        logger.info(f"Discovering files in {input_path}")
 
         # Track unique files to avoid duplicates from multiple patterns
         discovered_files = set()
@@ -112,28 +121,28 @@ class BatchProcessor:
                 if file_path in discovered_files:
                     continue
 
-                # Silently skip non-image files by extension check
-                if file_path.suffix.lower() not in self.IMAGE_EXTENSIONS:
+                # Silently skip unsupported file types by extension check
+                if file_path.suffix.lower() not in self.SUPPORTED_EXTENSIONS:
                     continue
 
                 discovered_files.add(file_path)
                 yield file_path
 
-        logger.info(f"Discovered {len(discovered_files)} image files")
+        logger.info(f"Discovered {len(discovered_files)} files")
 
     def run(self) -> BatchResult:
-        """Execute batch processing on all discovered images.
+        """Execute batch processing on all discovered files.
 
         Process flow:
-            1. Discover images using configured patterns
-            2. Process each image through pipeline
+            1. Discover files using configured patterns
+            2. Process each file through pipeline
             3. Track successes and failures
             4. Continue on error if configured
             5. Generate HTML report (handled by caller)
             6. Return aggregated results
 
         Returns:
-            BatchResult with statistics and per-image results
+            BatchResult with statistics and per-file results
 
         Raises:
             ValueError: If input directory doesn't exist
@@ -144,12 +153,12 @@ class BatchProcessor:
 
         logger.info(f"Starting batch processing: {batch_id}")
 
-        # Discover images
-        image_paths = list(self.discover_images())
-        total_files = len(image_paths)
+        # Discover files
+        file_paths = list(self.discover_images())
+        total_files = len(file_paths)
 
         if total_files == 0:
-            logger.warning("No images found to process")
+            logger.warning("No files found to process")
             # Return empty batch result
             return BatchResult(
                 batch_id=batch_id,
@@ -162,16 +171,25 @@ class BatchProcessor:
                 report_path="",  # Will be set by reporter
             )
 
-        logger.info(f"Processing {total_files} images...")
+        logger.info(f"Processing {total_files} files...")
 
-        # Process each image
-        for idx, image_path in enumerate(image_paths, start=1):
+        # Process each file
+        for idx, file_path in enumerate(file_paths, start=1):
             try:
                 # Log progress
-                logger.info(f"[{idx}/{total_files}] Processing {image_path.name}")
+                logger.info(f"[{idx}/{total_files}] Processing {file_path.name}")
 
-                # Run pipeline with image_path as input
-                result = self.pipeline.run(image_path=str(image_path))
+                # Determine input parameter name based on file type
+                file_ext = file_path.suffix.lower()
+                if file_ext in self.IMAGE_EXTENSIONS:
+                    input_key = "image_path"
+                elif file_ext in self.POINTCLOUD_EXTENSIONS:
+                    input_key = "pointcloud_path"
+                else:
+                    raise ValueError(f"Unsupported file extension: {file_ext}")
+
+                # Run pipeline with appropriate input key
+                result = self.pipeline.run(**{input_key: str(file_path)})
 
                 # Save stage outputs
                 saved_paths = {}
@@ -180,7 +198,7 @@ class BatchProcessor:
                         paths = self.output_saver.save_stage_output(
                             run_id=batch_id,
                             stage_name=stage_name,
-                            filename=image_path.name,
+                            filename=file_path.name,
                             outputs=stage_output,
                             image_index=idx - 1,
                             is_error=False,
@@ -191,7 +209,7 @@ class BatchProcessor:
                 # Extract PipelineRun from result if available
                 # (Pipeline.run() returns dict, need to construct PipelineRun)
                 pipeline_run = self._create_pipeline_run(
-                    image_path=image_path,
+                    file_path=file_path,
                     result=result,
                     status=RunStatus.COMPLETED,
                     error=None,
@@ -208,11 +226,11 @@ class BatchProcessor:
 
             except Exception as e:
                 # Log error
-                logger.error(f"[{idx}/{total_files}] Failed to process {image_path.name}: {e}")
+                logger.error(f"[{idx}/{total_files}] Failed to process {file_path.name}: {e}")
 
                 # Create failed run record
                 pipeline_run = self._create_pipeline_run(
-                    image_path=image_path,
+                    file_path=file_path,
                     result={},
                     status=RunStatus.FAILED,
                     error=str(e),
@@ -224,7 +242,7 @@ class BatchProcessor:
                 if not self.config.continue_on_error:
                     logger.error("Stopping batch processing due to error")
                     raise RuntimeError(
-                        f"Batch processing stopped at {image_path.name}: {e}"
+                        f"Batch processing stopped at {file_path.name}: {e}"
                     ) from e
 
         # Create output directory if it doesn't exist
@@ -258,7 +276,7 @@ class BatchProcessor:
 
     def _create_pipeline_run(
         self,
-        image_path: Path,
+        file_path: Path,
         result: dict,
         status: RunStatus,
         error: str | None,
@@ -266,7 +284,7 @@ class BatchProcessor:
         """Create a PipelineRun object from pipeline execution result.
 
         Args:
-            image_path: Path to processed image
+            file_path: Path to processed file (image or point cloud)
             result: Result dictionary from Pipeline.run()
             status: Run status (COMPLETED or FAILED)
             error: Error message if failed
@@ -300,13 +318,22 @@ class BatchProcessor:
             if not key.startswith("_")
         }
 
+        # Determine input key based on file type
+        file_ext = file_path.suffix.lower()
+        if file_ext in self.IMAGE_EXTENSIONS:
+            input_key = "image_path"
+        elif file_ext in self.POINTCLOUD_EXTENSIONS:
+            input_key = "pointcloud_path"
+        else:
+            input_key = "file_path"  # Fallback
+
         return PipelineRun(
             run_id=run_id,
             pipeline_name=self.pipeline.name,
             started_at=started_at,
             completed_at=completed_at,
             status=status,
-            inputs={"image_path": str(image_path)},
+            inputs={input_key: str(file_path)},
             outputs=outputs,
             stage_results=stage_results,
             error=error,
