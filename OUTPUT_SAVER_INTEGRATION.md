@@ -116,7 +116,7 @@ batch_config:
   output_mode: "sample"  # sample | validation | production
   save_outputs:
     enabled: true
-    stages: ["all"]  # or ["loader", "filter"]
+    stages: ["all"]  # or ["loader", "grayscale"]
     max_samples: 10
     format: "png"
 ```
@@ -146,9 +146,9 @@ examples/test_batch/output/
             │   ├── test_landscape_1_image.png
             │   ├── test_landscape_2_image.png
             │   └── ...
-            └── filter/
-                ├── test_landscape_1_filtered_image.png
-                ├── test_landscape_2_filtered_image.png
+            └── grayscale/
+                ├── test_landscape_1_grayscale_image.png
+                ├── test_landscape_2_grayscale_image.png
                 └── ...
 ```
 

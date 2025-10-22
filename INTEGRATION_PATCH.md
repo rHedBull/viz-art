@@ -173,8 +173,8 @@ examples/test_batch/output/
             │   ├── test_landscape_1_image.png
             │   ├── test_landscape_1_metadata.png  (if metadata has arrays)
             │   └── ...
-            └── filter/
-                ├── test_landscape_1_filtered_image.png
+            └── grayscale/
+                ├── test_landscape_1_grayscale_image.png
                 └── ...
 ```
 

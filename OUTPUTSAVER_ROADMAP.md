@@ -36,7 +36,7 @@ batch_config:
   output_mode: "sample"  # sample | validation | production
   save_outputs:
     enabled: true
-    stages: ["all"]      # or specific: ["loader", "filter"]
+    stages: ["all"]      # or specific: ["loader", "grayscale"]
     max_samples: 10      # limit for debugging
     format: "png"        # png | jpg | npy
 ```
