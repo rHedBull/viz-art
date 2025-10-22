@@ -103,7 +103,7 @@ class HTMLReporter:
             template = self.env.get_template(self.DEFAULT_TEMPLATE)
 
             # Prepare data for template
-            context = self._prepare_context(batch_result, pipeline_name)
+            context = self._prepare_context(batch_result, pipeline_name, output_path)
 
             # Render template
             html_content = template.render(**context)
@@ -120,13 +120,14 @@ class HTMLReporter:
             raise RuntimeError(f"Report generation failed: {e}") from e
 
     def _prepare_context(
-        self, batch_result: BatchResult, pipeline_name: str
+        self, batch_result: BatchResult, pipeline_name: str, report_path: Path
     ) -> Dict[str, Any]:
         """Prepare template context from batch result.
 
         Args:
             batch_result: BatchResult to process
             pipeline_name: Pipeline name for display
+            report_path: Path where the report will be written
 
         Returns:
             Dictionary with template variables
@@ -135,7 +136,7 @@ class HTMLReporter:
         duration = (batch_result.completed_at - batch_result.started_at).total_seconds()
 
         # Organize data by stage for stage-grouped view
-        stages_data = self._organize_by_stage(batch_result)
+        stages_data = self._organize_by_stage(batch_result, report_path)
 
         context = {
             "batch_result": batch_result,
@@ -146,11 +147,12 @@ class HTMLReporter:
 
         return context
 
-    def _organize_by_stage(self, batch_result: BatchResult) -> Dict[str, List[Dict[str, Any]]]:
+    def _organize_by_stage(self, batch_result: BatchResult, report_path: Path) -> Dict[str, List[Dict[str, Any]]]:
         """Organize run results by stage for stage-grouped view.
 
         Args:
             batch_result: BatchResult to organize
+            report_path: Path where the report will be written
 
         Returns:
             Dictionary mapping stage_name -> list of image data
@@ -162,24 +164,41 @@ class HTMLReporter:
             image_path = run.inputs.get("image_path", "")
             filename = Path(image_path).name
 
+            # Get saved paths if available
+            saved_paths = run.outputs.get('_saved_paths', {})
+
             # Get all stage outputs
             for stage_name, outputs in run.outputs.items():
+                if stage_name.startswith('_'):  # Skip metadata
+                    continue
+
                 if stage_name not in stages_data:
                     stages_data[stage_name] = []
 
-                # Check if this stage has image output
-                # Look for common image keys
-                image_key = None
-                for key in ["image", "filtered_image", "output_image", "result"]:
-                    if key in outputs:
-                        image_key = key
-                        break
+                # Get image path from saved outputs
+                image_path_rel = None
+                if saved_paths and stage_name in saved_paths:
+                    stage_saved = saved_paths[stage_name]
+                    # Get first image key
+                    for key, path in stage_saved.items():
+                        if isinstance(path, str) and path.endswith(('.png', '.jpg', '.jpeg')):
+                            # Make relative to report location (both in output_dir)
+                            try:
+                                abs_path = Path(path).resolve()
+                                report_dir = report_path.parent.resolve()
+                                rel_path = abs_path.relative_to(report_dir)
+                                image_path_rel = str(rel_path)
+                            except Exception as e:
+                                # Fallback to absolute path if relative doesn't work
+                                logger.debug(f"Could not create relative path: {e}, using absolute")
+                                image_path_rel = str(Path(path).resolve())
+                            break
 
                 # Create image data entry
                 image_data = {
                     "filename": filename,
                     "success": True,
-                    "image_path": None,  # Will be set if we save images
+                    "image_path": image_path_rel,
                     "stage_name": stage_name,
                 }
 

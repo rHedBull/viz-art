@@ -24,11 +24,13 @@ from viz_art.batch.reporter import HTMLReporter
 # Import example stages
 from stages.image_loader import ImageLoader
 from stages.simple_filter import SimpleFilter
+from stages.grayscale_stage import GrayscaleStage
 
 # Create stage registry
 STAGE_REGISTRY = {
     "ImageLoader": ImageLoader,
     "SimpleFilter": SimpleFilter,
+    "GrayscaleStage": GrayscaleStage,
 }
 
 

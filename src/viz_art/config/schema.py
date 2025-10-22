@@ -76,6 +76,19 @@ class ConnectionItem(BaseModel):
         return v.strip()
 
 
+class OutputSaveConfig(BaseModel):
+    """Configuration for saving stage outputs."""
+
+    enabled: bool = Field(default=True, description="Enable saving stage outputs")
+    stages: List[str] = Field(
+        default=["all"], description="Stage names to save outputs for"
+    )
+    max_samples: Optional[int] = Field(
+        default=10, description="Maximum samples to save (None = unlimited)"
+    )
+    format: str = Field(default="png", description="Output image format")
+
+
 class BatchConfigItem(BaseModel):
     """Configuration for batch processing.
 
@@ -86,6 +99,8 @@ class BatchConfigItem(BaseModel):
         recursive: Whether to search subdirectories
         continue_on_error: Continue processing if one image fails
         report_output: Filename for HTML report
+        output_mode: Output saving mode (sample, validation, production)
+        save_outputs: Output saving configuration
     """
 
     input_dir: str = Field(..., description="Input directory path")
@@ -99,6 +114,12 @@ class BatchConfigItem(BaseModel):
     )
     report_output: str = Field(
         default="report.html", description="HTML report filename"
+    )
+    output_mode: str = Field(
+        default="sample", description="Output mode: sample, validation, or production"
+    )
+    save_outputs: OutputSaveConfig = Field(
+        default_factory=OutputSaveConfig, description="Output saving configuration"
     )
 
     @field_validator("input_dir", "output_dir")

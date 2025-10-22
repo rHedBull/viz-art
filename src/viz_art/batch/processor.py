@@ -6,12 +6,14 @@ result aggregation.
 """
 
 from pathlib import Path
-from typing import Generator, List
+from typing import Generator, List, Dict, Any
 from datetime import datetime
+from dataclasses import replace
 import logging
 
 from viz_art.pipeline.base import Pipeline
 from viz_art.pipeline.results import PipelineRun, BatchResult, RunStatus
+from viz_art.pipeline.output_saver import OutputSaver
 from viz_art.config.schema import BatchConfigItem
 
 logger = logging.getLogger(__name__)
@@ -60,6 +62,14 @@ class BatchProcessor:
         self.config = config
         self._successful_runs: List[PipelineRun] = []
         self._failed_runs: List[PipelineRun] = []
+
+        # Initialize OutputSaver
+        self.output_saver = OutputSaver(
+            output_mode=config.output_mode,
+            save_config=config.save_outputs.model_dump(),
+            output_dir=config.output_dir,
+        )
+        logger.debug(f"OutputSaver initialized in {config.output_mode} mode")
 
     def discover_images(self) -> Generator[Path, None, None]:
         """Discover image files in input directory.
@@ -163,6 +173,21 @@ class BatchProcessor:
                 # Run pipeline with image_path as input
                 result = self.pipeline.run(image_path=str(image_path))
 
+                # Save stage outputs
+                saved_paths = {}
+                for stage_name, stage_output in result.items():
+                    if not stage_name.startswith('_'):  # Skip metadata keys
+                        paths = self.output_saver.save_stage_output(
+                            run_id=batch_id,
+                            stage_name=stage_name,
+                            filename=image_path.name,
+                            outputs=stage_output,
+                            image_index=idx - 1,
+                            is_error=False,
+                        )
+                        if paths:
+                            saved_paths[stage_name] = paths
+
                 # Extract PipelineRun from result if available
                 # (Pipeline.run() returns dict, need to construct PipelineRun)
                 pipeline_run = self._create_pipeline_run(
@@ -171,6 +196,13 @@ class BatchProcessor:
                     status=RunStatus.COMPLETED,
                     error=None,
                 )
+
+                # Add saved paths to pipeline_run (store as dict in outputs metadata)
+                if saved_paths:
+                    pipeline_run = replace(
+                        pipeline_run,
+                        outputs={**pipeline_run.outputs, '_saved_paths': saved_paths}
+                    )
 
                 self._successful_runs.append(pipeline_run)
 

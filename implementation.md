@@ -39,6 +39,9 @@
 - [ ] Integrate Open3D for processing
 - [ ] Update stages to handle multi-modal inputs
 - [ ] Create sample point cloud processing stage
+- [ ] Extend OutputSaver to save point clouds (.pcd, .ply, .xyz formats)
+- [ ] Add point cloud thumbnail generation for reports (rendered views)
+- [ ] Support saving image + point cloud overlay visualizations
 
 ### 2.2 Enhanced Visualization (2 days)
 - [ ] Add Plotly for interactive visualizations
@@ -65,11 +68,15 @@
 - [ ] Simple metrics storage with PyArrow
 - [ ] Performance dashboard in UI
 
-### 3.2 Logging & Auditing (1 day)
+### 3.2 Logging & Auditing (2 days)
 - [ ] Integrate Loguru for structured logging
 - [ ] Implement audit trail with run IDs
+- [ ] Save audit logs to disk (JSON format with run metadata)
+- [ ] Link audit logs to saved stage outputs (via OutputSaver paths)
+- [ ] Performance metrics storage (PyArrow/Parquet format)
 - [ ] Create log viewer in UI
 - [ ] Export logs for debugging
+- [ ] Query interface for run history (by run_id, date range, performance metrics)
 
 ### 3.3 Ground Truth Integration (2 days)
 - [ ] Define golden dataset structure
@@ -92,9 +99,13 @@
 
 ### 4.2 Error Analysis Tools (2 days)
 - [ ] Error case browser in UI
-- [ ] Side-by-side prediction vs ground truth
-- [ ] Error pattern detection
+- [ ] Load saved error outputs from OutputSaver (validation mode)
+- [ ] Side-by-side prediction vs ground truth visualization
+- [ ] Image diff visualization for visual inspection
+- [ ] Point cloud diff visualization (color-coded distance errors)
+- [ ] Error pattern detection and clustering
 - [ ] Export failure cases for analysis
+- [ ] Automatic error categorization (by stage, error type, severity)
 
 ### 4.3 Performance Dashboard (1 day)
 - [ ] Real-time accuracy display during runs
@@ -109,11 +120,15 @@
 ## Phase 5: Advanced Features (Week 5)
 **Goal**: Production-ready features and polish
 
-### 5.1 Model Versioning (1 day)
+### 5.1 Model Versioning (2 days)
 - [ ] Simple model registry
 - [ ] Version tracking in configs
 - [ ] Model switching UI
+- [ ] Save outputs per model version (using OutputSaver with version tags)
 - [ ] Performance comparison between versions
+- [ ] Side-by-side output comparison UI (load from saved outputs)
+- [ ] Automatic A/B testing with saved artifacts
+- [ ] Version rollback capability with output archival
 
 ### 5.2 Calibration System (2 days)
 - [ ] Calibration file management
@@ -121,11 +136,16 @@
 - [ ] Projection visualization tools
 - [ ] Calibration validation checks
 
-### 5.3 Batch Processing (1 day)
-- [ ] Support for processing multiple files
-- [ ] Progress tracking for batches
-- [ ] Batch performance statistics
+### 5.3 Batch Processing & Output Management (2 days)
+- [X] Support for processing multiple files (Phase 1 complete)
+- [X] Progress tracking for batches (Phase 1 complete)
+- [X] Batch performance statistics (Phase 1 complete)
+- [X] OutputSaver foundation with sample/validation/production modes (Phase 1 complete)
+- [X] Image output saving (PNG/JPG) for debugging (Phase 1 complete)
+- [ ] Point cloud output saving (.pcd, .ply formats)
+- [ ] Multi-modal output saving (image + point cloud overlays)
 - [ ] Parallel processing option
+- [ ] Output artifact management (cleanup old runs, disk space monitoring)
 
 ### 5.4 Export & Integration (1 day)
 - [ ] Export pipeline as standalone script

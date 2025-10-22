@@ -36,7 +36,13 @@ A lightweight library for building multi-modal vision pipelines with integrated 
 - **Real-time accuracy display**: correct/wrong/invalid/unlabeled counts
 - **Per-stage metrics**: precision, recall, F1, mAP, IoU as appropriate
 - **Error analysis tools** to browse and filter failure cases
+  - Load saved error outputs from OutputSaver (validation mode)
+  - Side-by-side prediction vs ground truth visualization
+  - Image diff visualization with color-coded differences
+  - Point cloud diff with distance error heatmaps
+  - Automatic error categorization by stage, type, severity
 - **Performance regression testing** with configurable thresholds
+- **Saved output comparison**: Compare predictions across pipeline versions using saved artifacts
 
 ### 6. Configuration Management
 - **Single config file** (YAML/JSON) defining all pipeline parameters
@@ -49,6 +55,11 @@ A lightweight library for building multi-modal vision pipelines with integrated 
 - **Simple registry** mapping version names to file paths
 - **Track which version** processed which data
 - **Performance comparison** between versions
+- **Output artifact versioning**: Save outputs per model version using OutputSaver
+  - Automatic version tagging in output paths: `output/runs/{run_id}_v{version}/`
+  - Side-by-side comparison UI loading from saved outputs
+  - A/B testing support with automatic artifact archival
+  - Version rollback capability with preserved output history
 
 ### 8. Data Lineage & Auditing
 - **Run ID** for each pipeline execution
@@ -56,16 +67,35 @@ A lightweight library for building multi-modal vision pipelines with integrated 
 - **Performance metrics** included in audit trail
 - **Simple file-based storage** (JSON logs) for debugging
 - **Query by run ID** to trace what happened to specific data
+- **OutputSaver integration**: Automatic linking of audit logs to saved stage outputs
+  - Sample mode: Save all stage outputs for first N samples (debugging)
+  - Validation mode: Save failures and final outputs (testing with ground truth)
+  - Production mode: Save final outputs only or disable saving (efficiency)
+- **Saved artifact organization**: `output/runs/{run_id}/stages/{stage_name}/{filename}`
+- **Multi-modal support**: Images (PNG/JPG), point clouds (.pcd, .ply), overlays
+- **Disk space management**: Configurable retention policies, automatic cleanup
 
 ### 9. Integrated UI
 - **Auto-generated interface** based on pipeline definition
 - **File upload widgets** for image and point cloud inputs
 - **Stage-by-stage visualization** showing inputs, outputs, timing, and accuracy
+  - Load stage outputs from OutputSaver saved artifacts
+  - Interactive image viewer with zoom/pan
+  - 3D point cloud viewer with rotation/filtering
+  - Thumbnail gallery for batch results
 - **Live progress tracking** with performance metrics
 - **Results viewer** with appropriate visualizations and ground truth comparison
+  - Load predictions and ground truth from saved outputs
+  - Overlay mode for image + point cloud fusion
 - **Config editor** to modify parameters without restarting
+  - Configure OutputSaver modes (sample/validation/production)
+  - Set output retention policies
 - **Run history browser** with performance trends
+  - Query saved runs by date, performance, status
+  - Load any historical run artifacts for review
 - **Error case browser** for debugging failures
+  - Automatically load error artifacts from validation mode saves
+  - Filter by error type, stage, severity
 
 ### 10. Design Principles
 - **Convention over configuration**: sensible defaults for everything

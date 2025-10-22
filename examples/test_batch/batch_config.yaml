@@ -8,14 +8,13 @@ stages:
     config:
       resize: [640, 480]
 
-  - name: "filter"
-    stage_type: "SimpleFilter"
-    config:
-      kernel_size: 5
+  - name: "grayscale"
+    stage_type: "GrayscaleStage"
+    config: {}
 
 connections:
   - source: "loader"
-    target: "filter"
+    target: "grayscale"
     output_key: "image"
     input_key: "image"
 
@@ -29,3 +28,11 @@ batch_config:
   recursive: true
   continue_on_error: true
   report_output: "batch_report.html"
+
+  # Output saving configuration
+  output_mode: "sample"
+  save_outputs:
+    enabled: true
+    stages: ["all"]
+    max_samples: 10
+    format: "png"
