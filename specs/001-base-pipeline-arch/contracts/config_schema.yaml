@@ -1,0 +1,133 @@
+# Configuration Schema Example: Pipeline YAML Structure
+# Feature: 001-base-pipeline-arch
+# Date: 2025-10-22
+
+# This file demonstrates the expected YAML structure for pipeline configurations.
+# It serves as both documentation and a reference for users.
+
+# ==============================================================================
+# BASIC PIPELINE CONFIGURATION
+# ==============================================================================
+
+pipeline_name: "example-vision-pipeline"
+
+# Output directory for pipeline results
+output_dir: "./output"
+
+# ==============================================================================
+# STAGES DEFINITION
+# ==============================================================================
+# List of processing stages to execute in sequence
+
+stages:
+  # Stage 1: Image Loader
+  - name: "loader"
+    stage_type: "ImageLoader"
+    enabled: true
+    config:
+      resize: [640, 480]          # Resize images to this dimension
+      color_mode: "RGB"           # RGB or GRAY
+      normalize: true             # Normalize pixel values to [0, 1]
+
+  # Stage 2: Simple Filter
+  - name: "filter"
+    stage_type: "SimpleFilter"
+    enabled: true
+    config:
+      filter_type: "gaussian"     # gaussian, median, bilateral
+      kernel_size: 5              # Filter kernel size
+      sigma: 1.0                  # Gaussian sigma
+
+  # Stage 3: Object Detector (example for future)
+  - name: "detector"
+    stage_type: "ObjectDetector"
+    enabled: false                # Disabled - not implemented yet
+    config:
+      model_path: "./models/yolo.pt"
+      confidence_threshold: 0.5
+      nms_threshold: 0.4
+
+# ==============================================================================
+# CONNECTIONS DEFINITION
+# ==============================================================================
+# Define data flow between stages
+
+connections:
+  # Connect loader output to filter input
+  - source: "loader"
+    target: "filter"
+    output_key: "image"
+    input_key: "image"
+    required: true
+
+  # Connect filter output to detector input
+  - source: "filter"
+    target: "detector"
+    output_key: "filtered_image"
+    input_key: "image"
+    required: true
+
+# ==============================================================================
+# BATCH PROCESSING CONFIGURATION (Optional)
+# ==============================================================================
+# Configuration for batch processing multiple images
+
+batch_config:
+  input_dir: "./data/images"              # Directory containing input images
+  output_dir: "./output/batch_results"    # Directory for outputs
+  file_patterns:                          # Image file patterns to process
+    - "*.png"
+    - "*.jpg"
+    - "*.jpeg"
+  recursive: true                         # Search subdirectories
+  continue_on_error: true                 # Continue if one image fails
+  report_output: "batch_report.html"      # HTML report filename
+
+# ==============================================================================
+# ADVANCED FEATURES (Using OmegaConf interpolation)
+# ==============================================================================
+
+# Example with variable interpolation
+# Uncomment to use:
+
+# paths:
+#   data_root: "./data"
+#   model_root: "./models"
+#
+# stages:
+#   - name: "loader"
+#     stage_type: "ImageLoader"
+#     config:
+#       input_dir: "${paths.data_root}/images"  # Interpolated at runtime
+#
+#   - name: "detector"
+#     stage_type: "ObjectDetector"
+#     config:
+#       model_path: "${paths.model_root}/detector.pt"
+
+# ==============================================================================
+# VALIDATION RULES
+# ==============================================================================
+
+# This configuration will be validated against the following rules:
+# 1. pipeline_name must be non-empty string
+# 2. stages must contain at least 1 stage
+# 3. All stage names must be unique
+# 4. stage_type must reference a registered/importable class
+# 5. Connection source/target must reference existing stages
+# 6. Connection output_key must exist in source stage's output_keys
+# 7. Connection input_key must exist in target stage's input_keys
+# 8. batch_config.input_dir must be an existing directory
+# 9. output_dir must be a valid path (created if doesn't exist)
+# 10. No circular dependencies in connections
+
+# ==============================================================================
+# USAGE EXAMPLE
+# ==============================================================================
+
+# from viz_art.config.loader import load_config
+# from viz_art.pipeline.base import Pipeline
+#
+# config = load_config("this_file.yaml")
+# pipeline = Pipeline.from_config(config)
+# results = pipeline.run(image_path="test.jpg")

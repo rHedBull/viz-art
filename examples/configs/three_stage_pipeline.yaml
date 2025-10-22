@@ -1,0 +1,41 @@
+# Three-stage pipeline with OmegaConf variable interpolation
+# Demonstrates advanced config features
+
+pipeline_name: "three-stage-config"
+
+# Variables for reuse (OmegaConf interpolation)
+defaults:
+  image_size:
+    width: 320
+    height: 240
+
+output_dir: "./output"
+
+stages:
+  - name: "loader"
+    stage_type: "ImageLoader"
+    config:
+      color_mode: "RGB"
+
+  - name: "filter"
+    stage_type: "SimpleFilter"
+    config:
+      kernel_size: 5
+      sigma: 0.0  # Auto-calculate
+
+  - name: "resizer"
+    stage_type: "ImageResizer"
+    config:
+      width: ${defaults.image_size.width}  # Variable interpolation
+      height: ${defaults.image_size.height}
+
+connections:
+  - source: "loader"
+    target: "filter"
+    output_key: "image"
+    input_key: "image"
+
+  - source: "filter"
+    target: "resizer"
+    output_key: "filtered_image"
+    input_key: "filtered_image"

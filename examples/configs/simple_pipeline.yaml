@@ -1,0 +1,28 @@
+# Simple 2-stage pipeline configuration
+# Demonstrates basic YAML config for image loading and filtering
+
+pipeline_name: "simple-config-pipeline"
+
+output_dir: "./output"
+
+stages:
+  - name: "loader"
+    stage_type: "ImageLoader"
+    enabled: true
+    config:
+      resize: null  # No resizing
+      color_mode: "RGB"
+
+  - name: "filter"
+    stage_type: "SimpleFilter"
+    enabled: true
+    config:
+      kernel_size: 7
+      sigma: 1.0
+
+connections:
+  - source: "loader"
+    target: "filter"
+    output_key: "image"
+    input_key: "image"
+    required: true
