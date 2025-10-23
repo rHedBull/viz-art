@@ -1,0 +1,24 @@
+# T057: Configuration example with enable_profiling flag
+
+# Performance monitoring configuration
+performance:
+  enable_profiling: true
+  metrics_output_dir: "output/metrics"
+  retention_days: 90
+
+# Pipeline configuration
+pipeline:
+  name: "sample_profiled_pipeline"
+  stages:
+    - name: "preprocessing"
+      type: "PreprocessingStage"
+    - name: "detection"
+      type: "DetectionStage"
+    - name: "postprocessing"
+      type: "PostprocessingStage"
+
+# Output configuration
+output:
+  save_metrics: true
+  generate_dashboard: true
+  dashboard_output: "output/dashboard.html"

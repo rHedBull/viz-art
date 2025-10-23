@@ -5,6 +5,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-22
 ## Active Technologies
 - Python 3.8+ (matches existing codebase) (002-multimodal-viz)
 - File-based (.pcd, .ply, .xyz for point clouds; YAML for calibration) (002-multimodal-viz)
+- Python 3.8+ (existing project requirement) + Loguru (structured logging), PyArrow (metrics storage), psutil (memory tracking), torchmetrics or scikit-learn (accuracy metrics) (003-multimodal-viz-phase3)
+- File-based: JSON for audit logs, Parquet for performance metrics, existing OutputSaver for stage artifacts (003-multimodal-viz-phase3)
 
 - Python 3.8+ + pydantic (data validation), omegaconf (configuration), pytest (testing), PIL/opencv-python (image processing), jinja2 (HTML templating) (001-base-pipeline-arch)
 
@@ -24,6 +26,7 @@ cd src [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES][ONLY COMMANDS FOR ACTIVE TECHNOLO
 Python 3.8+: Follow standard conventions
 
 ## Recent Changes
+- 003-multimodal-viz-phase3: Added Python 3.8+ (existing project requirement) + Loguru (structured logging), PyArrow (metrics storage), psutil (memory tracking), torchmetrics or scikit-learn (accuracy metrics)
 - 002-multimodal-viz: Added Python 3.8+ (matches existing codebase)
 
 - 001-base-pipeline-arch: Added Python 3.8+ + pydantic (data validation), omegaconf (configuration), pytest (testing), PIL/opencv-python (image processing), jinja2 (HTML templating)

@@ -1,0 +1,39 @@
+# Full Observability Configuration
+# Enables all Phase 3 monitoring and debugging features
+
+# Performance profiling
+enable_profiling: true
+metrics_retention_days: 90  # Keep metrics for 3 months
+
+# Audit logging
+enable_audit_logging: true
+log_retention_days: 30  # Keep logs for 1 month
+
+# Ground truth validation
+enable_validation: true
+ground_truth_dataset: "coco_val_2017"
+
+# Output configuration
+output_dir: "output"
+
+# Pipeline configuration
+pipeline:
+  name: "multimodal-viz-pipeline"
+  stages:
+    - preprocessing
+    - detection
+    - segmentation
+    - postprocessing
+
+# Monitoring thresholds
+thresholds:
+  max_execution_time_ms: 5000  # Alert if stage takes > 5 seconds
+  max_memory_mb: 2048  # Alert if memory usage > 2GB
+  min_accuracy: 0.85  # Alert if accuracy < 85%
+
+# Dashboard settings
+dashboard:
+  aggregate_by: "daily"  # daily, weekly, monthly
+  show_confidence_intervals: true
+  detect_regressions: true
+  regression_threshold: 0.10  # Alert on >10% performance degradation

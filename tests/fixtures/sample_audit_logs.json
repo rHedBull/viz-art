@@ -1,0 +1,35 @@
+[
+  {
+    "run_id": "test-run-001",
+    "timestamp": "2025-10-23T10:00:00.000000Z",
+    "level": "INFO",
+    "stage_name": "detection",
+    "message": "Stage started",
+    "metadata": {
+      "input_count": 1
+    }
+  },
+  {
+    "run_id": "test-run-001",
+    "timestamp": "2025-10-23T10:00:01.500000Z",
+    "level": "INFO",
+    "stage_name": "detection",
+    "message": "Stage completed",
+    "metadata": {
+      "output_count": 1,
+      "execution_time_ms": 1500.0
+    }
+  },
+  {
+    "run_id": "test-run-002",
+    "timestamp": "2025-10-23T10:05:00.000000Z",
+    "level": "ERROR",
+    "stage_name": "detection",
+    "message": "Stage failed: Invalid input shape",
+    "metadata": {
+      "error_type": "ValueError",
+      "input_shape": [3, 224, 224],
+      "expected_shape": [3, 512, 512]
+    }
+  }
+]

@@ -1,0 +1,73 @@
+{
+  "images": [
+    {
+      "id": 1,
+      "file_name": "image_001.jpg",
+      "width": 640,
+      "height": 480
+    },
+    {
+      "id": 2,
+      "file_name": "image_002.jpg",
+      "width": 640,
+      "height": 480
+    },
+    {
+      "id": 3,
+      "file_name": "image_003.jpg",
+      "width": 800,
+      "height": 600
+    }
+  ],
+  "annotations": [
+    {
+      "id": 1,
+      "image_id": 1,
+      "category_id": 1,
+      "bbox": [95, 95, 210, 210],
+      "area": 44100,
+      "iscrowd": 0
+    },
+    {
+      "id": 2,
+      "image_id": 1,
+      "category_id": 2,
+      "bbox": [295, 145, 160, 190],
+      "area": 30400,
+      "iscrowd": 0
+    },
+    {
+      "id": 3,
+      "image_id": 2,
+      "category_id": 3,
+      "bbox": [45, 55, 190, 230],
+      "area": 43700,
+      "iscrowd": 0
+    },
+    {
+      "id": 4,
+      "image_id": 3,
+      "category_id": 1,
+      "bbox": [195, 195, 110, 110],
+      "area": 12100,
+      "iscrowd": 0
+    }
+  ],
+  "categories": [
+    {
+      "id": 1,
+      "name": "car",
+      "supercategory": "vehicle"
+    },
+    {
+      "id": 2,
+      "name": "person",
+      "supercategory": "person"
+    },
+    {
+      "id": 3,
+      "name": "bicycle",
+      "supercategory": "vehicle"
+    }
+  ]
+}

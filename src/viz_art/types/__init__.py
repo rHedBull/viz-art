@@ -20,7 +20,20 @@ from .pointcloud import (
     MultiModalInput,
 )
 
+# Phase 3: Monitoring and debugging types
+from .monitoring import (
+    RunStatus,
+    LogLevel,
+    AnnotationFormat,
+    Run,
+    StageExecution,
+    AuditLog,
+    GroundTruthDataset,
+    AccuracyMetrics,
+)
+
 __all__ = [
+    # Point cloud types
     "PointArray",
     "ColorArray",
     "NormalArray",
@@ -38,4 +51,13 @@ __all__ = [
     "PointCloudValidationRules",
     "VisualizationConfig",
     "MultiModalInput",
+    # Monitoring types
+    "RunStatus",
+    "LogLevel",
+    "AnnotationFormat",
+    "Run",
+    "StageExecution",
+    "AuditLog",
+    "GroundTruthDataset",
+    "AccuracyMetrics",
 ]
