@@ -72,13 +72,21 @@ class HTMLReporter:
         batch_result: BatchResult,
         output_path: str | Path,
         pipeline_name: str = "Pipeline",
+        phase3_metrics: Optional[Dict[str, Any]] = None,
+        phase3_validation: Optional[Dict[str, Any]] = None,
+        phase3_logs: Optional[list] = None,
     ) -> Path:
-        """Generate HTML report from batch results.
+        """Generate HTML report from batch results with optional observability metrics.
 
         Args:
             batch_result: BatchResult from BatchProcessor.run()
             output_path: Path for output HTML file
             pipeline_name: Name of the pipeline for display
+            phase3_metrics: Optional performance metrics
+                           (dict with 'timing_chart' and 'memory_chart' HTML)
+            phase3_validation: Optional ground truth validation metrics
+                              (dict with precision, recall, f1_score, errors list)
+            phase3_logs: Optional audit log entries (list of log dicts)
 
         Returns:
             Absolute path to generated HTML file
@@ -92,6 +100,9 @@ class HTMLReporter:
             - Stage-grouped view (all images organized by stage)
             - Per-image complete pipeline view
             - Error section with failure details
+            - Performance metrics (if provided)
+            - Ground truth validation (if provided)
+            - Audit logs (if provided)
         """
         if batch_result is None:
             raise ValueError("batch_result cannot be None")
@@ -104,7 +115,10 @@ class HTMLReporter:
             template = self.env.get_template(self.DEFAULT_TEMPLATE)
 
             # Prepare data for template
-            context = self._prepare_context(batch_result, pipeline_name, output_path)
+            context = self._prepare_context(
+                batch_result, pipeline_name, output_path,
+                phase3_metrics, phase3_validation, phase3_logs
+            )
 
             # Render template
             html_content = template.render(**context)
@@ -121,7 +135,13 @@ class HTMLReporter:
             raise RuntimeError(f"Report generation failed: {e}") from e
 
     def _prepare_context(
-        self, batch_result: BatchResult, pipeline_name: str, report_path: Path
+        self,
+        batch_result: BatchResult,
+        pipeline_name: str,
+        report_path: Path,
+        phase3_metrics: Optional[Dict[str, Any]] = None,
+        phase3_validation: Optional[Dict[str, Any]] = None,
+        phase3_logs: Optional[list] = None,
     ) -> Dict[str, Any]:
         """Prepare template context from batch result.
 
@@ -129,6 +149,9 @@ class HTMLReporter:
             batch_result: BatchResult to process
             pipeline_name: Pipeline name for display
             report_path: Path where the report will be written
+            phase3_metrics: Optional Phase 3 performance metrics
+            phase3_validation: Optional Phase 3 validation metrics
+            phase3_logs: Optional Phase 3 audit logs
 
         Returns:
             Dictionary with template variables
@@ -144,6 +167,9 @@ class HTMLReporter:
             "pipeline_name": pipeline_name,
             "duration_seconds": duration,
             "stages_data": stages_data,
+            "phase3_metrics": phase3_metrics,
+            "phase3_validation": phase3_validation,
+            "phase3_logs": phase3_logs,
         }
 
         return context

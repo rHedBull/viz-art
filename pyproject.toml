@@ -3,7 +3,7 @@ name = "viz-art"
 version = "0.1.0"
 description = "Lightweight library for building multi-stage vision processing pipelines"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
     "pydantic>=2.0",
     "omegaconf>=2.3",
@@ -49,8 +49,8 @@ addopts = "-v --cov=src/viz_art --cov-report=term-missing"
 
 [tool.black]
 line-length = 88
-target-version = ['py38']
+target-version = ['py39']
 
 [tool.ruff]
 line-length = 88
-target-version = "py38"
+target-version = "py39"

@@ -6,7 +6,7 @@ with error handling and result aggregation.
 """
 
 from pathlib import Path
-from typing import Generator, List, Dict, Any
+from typing import Generator, List, Dict, Any, Optional
 from datetime import datetime
 from dataclasses import replace
 import logging
@@ -51,12 +51,13 @@ class BatchProcessor:
     # All supported file extensions
     SUPPORTED_EXTENSIONS = IMAGE_EXTENSIONS | POINTCLOUD_EXTENSIONS
 
-    def __init__(self, pipeline: Pipeline, config: BatchConfigItem):
+    def __init__(self, pipeline: Pipeline, config: BatchConfigItem, profiler: Optional[Any] = None):
         """Initialize batch processor.
 
         Args:
             pipeline: Configured Pipeline instance
             config: Batch processing configuration
+            profiler: Optional performance profiler for stage-level metrics
 
         Raises:
             ValueError: If pipeline or config is None
@@ -68,8 +69,13 @@ class BatchProcessor:
 
         self.pipeline = pipeline
         self.config = config
+        self.profiler = profiler
         self._successful_runs: List[PipelineRun] = []
         self._failed_runs: List[PipelineRun] = []
+
+        # Set profiler on pipeline if provided
+        if profiler:
+            self.pipeline.profiler = profiler
 
         # Initialize OutputSaver
         self.output_saver = OutputSaver(

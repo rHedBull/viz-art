@@ -1,340 +1,325 @@
 # viz-art Examples
 
-This directory contains comprehensive examples demonstrating all features of the viz-art pipeline library.
+Clean, focused examples demonstrating the viz-art pipeline features.
 
-## Quick Start
+## 🚀 Quick Start
 
-All examples can be run directly from the `examples/` directory:
+### 1. Create Sample Data
+
+Generate sample images and point clouds:
 
 ```bash
-cd examples
-python test_visualization.py
-python test_projection.py
-python test_validation.py
+python examples/data/create_sample_data.py
 ```
 
-## Example Scripts
+Creates:
+- `data/sample_000.jpg`, `sample_001.jpg`, `sample_002.jpg` - Sample images (480×640)
+- `data/cloud_000.npy`, `cloud_001.npy`, `cloud_002.npy` - Sample point clouds (1000-2000 points)
 
-### Point Cloud Processing
+### 2. Run the Demo
 
-#### `test_visualization.py`
-Interactive 3D point cloud visualization using Plotly WebGL.
+**Option A: Simple Demo** (Quick start)
+```bash
+uv run python examples/demo_simple.py
+```
+- Runtime: < 1 second
+- Features: Performance profiling, audit logging, basic charts
+- Best for: Understanding the basics
 
+**Option B: Comprehensive Demo** ⭐ **RECOMMENDED**
+```bash
+uv run python examples/demo_comprehensive.py
+```
+- Runtime: ~1 second
+- Features: **ALL Phase 3 capabilities**
+  - ✅ Performance profiling (timing + memory charts)
+  - ✅ Audit logging with structured logs
+  - ✅ Ground truth validation (precision, recall, F1)
+  - ✅ Error analysis (false positives, false negatives)
+  - ✅ Comprehensive HTML report (25KB with embedded charts)
+- Best for: Seeing the complete Phase 3 system
+
+## Output Structure
+
+All demo scripts create outputs in this structure:
+
+```
+examples/output/<demo_name>/
+├── metrics/                     # Performance metrics (Parquet)
+│   ├── image_processing.parquet
+│   └── pointcloud_processing.parquet
+├── logs/                        # Audit logs (JSONL)
+│   └── YYYY-MM-DD.jsonl
+└── runs/                        # Run metadata (JSON)
+    └── <run-id>/
+        └── run_metadata.json
+```
+
+## Phase 3 Observability Features
+
+### Performance Profiling
+
+Track execution time and memory usage:
+
+```python
+from viz_art.performance import create_profiler, create_metrics_storage
+
+# Setup
+metrics_storage = create_metrics_storage(
+    output_dir=Path("output/metrics"),
+    retention_days=90
+)
+profiler = create_profiler(storage=metrics_storage, enabled=True)
+
+# Measure performance
+with profiler.measure("my_stage"):
+    result = expensive_operation()
+```
+
+Metrics are stored in Parquet format with:
+- Stage name
+- Execution time (ms)
+- CPU memory usage (MB)
+- GPU memory usage (MB) if available
+- Timestamp
+
+### Audit Logging
+
+Track all pipeline operations with structured logs:
+
+```python
+from viz_art.audit import create_logger, create_run_tracker
+
+# Setup run tracking
+tracker = create_run_tracker(Path("output/runs"))
+
+# Track a pipeline run
+with tracker.track(config_snapshot, input_files, output_dir) as run_id:
+    logger = create_logger(run_id, Path("output/logs"), retention="30 days")
+
+    # Log with structured metadata
+    logger.info("Processing started", count=10, mode="batch")
+    logger.warning("Low memory", available_mb=512)
+    logger.error("Processing failed", error="details", file="input.jpg")
+```
+
+Logs are stored in JSONL format with:
+- Timestamp
+- Log level (INFO, WARNING, ERROR)
+- Message
+- Structured metadata (as key-value pairs)
+- Run ID binding
+- File/line information
+
+### CLI Tools
+
+Query logs and metrics from the command line:
+
+```bash
+# View logs for a specific run
+viz-art-logs --run-id <run-id>
+
+# View failed runs
+viz-art-logs --failed
+
+# View logs from date range
+viz-art-logs --after 2025-10-20 --before 2025-10-25
+
+# View logs for specific stage
+viz-art-logs --stage detection
+
+# View metrics for a stage
+viz-art-metrics --stage image_processing
+
+# Export logs to JSON
+viz-art-logs --run-id <run-id> --output filtered_logs.json
+```
+
+## Available Examples
+
+### `demo_comprehensive.py` ⭐ RECOMMENDED
+**Purpose:** Complete Phase 3 observability system
+**Time:** ~1 second
 **Features:**
-- Load and display point clouds interactively
-- Color coding by height, intensity, or RGB
-- Rotation, zoom, pan controls
-- Auto-downsampling for large clouds (>500K points)
-- Export to HTML for sharing
+- Ground truth validation with accuracy metrics
+- Error analysis (FP, FN categorization)
+- Performance profiling with charts
+- Audit logging with structured logs
+- 25KB HTML report with ALL features embedded
+**Best for:** Production-ready observability example
 
-**Usage:**
-```bash
-python test_visualization.py
-```
+### `demo_simple.py`
+**Purpose:** Minimal Phase 3 example
+**Time:** < 1 second
+**Best for:** Quick start and understanding basics
 
-#### `test_projection.py`
-Project 3D point clouds onto 2D images using camera calibration.
+### `test_validation.py`
+**Purpose:** Point cloud data quality validation
+**Features:** Tests 6 validation scenarios (NaN, Inf, range checks, empty data)
+**Best for:** Understanding validation rules
 
-**Features:**
-- Load camera calibration from YAML
-- Project 3D points to 2D image plane
-- Depth-based color coding
-- Adjustable transparency blending
-- Generates synthetic test data
+### `test_visualization.py`
+**Purpose:** Interactive 3D point cloud visualization
+**Features:** Plotly WebGL visualization with color modes
+**Best for:** Visualizing point cloud data
 
-**Usage:**
-```bash
-python test_projection.py
-```
+## Stage Library
 
-#### `test_validation.py`
-Comprehensive data quality validation test suite.
-
-**Features:**
-- Tests 6 validation scenarios (valid, NaN, Inf, range, empty, etc.)
-- Configurable validation rules
-- Clear error reporting
-- Performance benchmarking
-
-**Usage:**
-```bash
-python test_validation.py
-```
-
-**Expected output:**
-- All 6 tests should pass
-- Each test shows detected issues
-- Success rate: 100%
-
-#### `test_stage_outputs.py`
-Multi-modal pipeline with stage-by-stage output inspection.
-
-**Features:**
-- Process both images and point clouds
-- View intermediate outputs from each stage
-- Automatic thumbnail generation
-- HTML report with 3D viewers
-
-**Usage:**
-```bash
-python test_stage_outputs.py
-```
-
-#### `test_batch_thumbnails.py`
-Batch processing with thumbnail generation and caching.
-
-**Features:**
-- Create synthetic test point clouds
-- Generate thumbnails with caching
-- Performance benchmarking (first vs cached)
-- Verify SC-006 target (< 3s per cloud)
-
-**Usage:**
-```bash
-python test_batch_thumbnails.py
-```
-
-**Expected output:**
-- 5 test clouds created
-- First pass: 1-2s per thumbnail
-- Second pass (cached): 0.01-0.05s per thumbnail
-- Speedup: ~10-100x
-
-## Example Stages
-
-The `stages/` directory contains production-ready pipeline stages:
+The `stages/` directory contains reusable pipeline stage implementations:
 
 ### Point Cloud Stages
+- `pointcloud_loader.py` - Load .pcd, .ply, .xyz files
+- `pointcloud_validation.py` - Data quality validation
+- `pointcloud_visualization.py` - Interactive 3D visualization
+- `pointcloud_projection.py` - Project 3D points onto 2D images
+- `pointcloud_thumbnail.py` - Generate static thumbnails
 
-#### `pointcloud_loader.py`
-Load point clouds from .pcd, .ply, .xyz files with preprocessing.
+### Image Stages
+- `image_loader.py` - Load and preprocess images
+- `image_resizer.py` - Resize images
+- `grayscale_stage.py` - Convert to grayscale
+- `simple_filter.py` - Apply image filters
 
-**Parameters:**
-- `downsample_voxel_size`: Voxel size for downsampling (meters)
-- `remove_outliers`: Enable statistical outlier removal
-- `outlier_neighbors`: Number of neighbors for outlier detection
-- `outlier_std_ratio`: Standard deviation ratio threshold
+### Multi-Modal Stages
+- `multimodal_loader.py` - Load synchronized image + point cloud pairs
 
-**Example:**
+**Usage example:**
 ```python
-loader = PointCloudLoader(
-    name="loader",
-    downsample_voxel_size=0.05,  # 5cm voxels
-    remove_outliers=True
-)
-result = loader.run({"pointcloud_path": "cloud.pcd"})
+from examples.stages.image_loader import ImageLoader
+from examples.stages.grayscale_stage import GrayscaleStage
+
+# Use stages in your pipeline
+loader = ImageLoader(name="loader", resize=(640, 480))
+grayscale = GrayscaleStage(name="gray")
+
+result = loader.run({"image_path": "input.jpg"})
+result = grayscale.run(result)
 ```
 
-#### `pointcloud_validation.py`
-Validate point cloud data quality.
+## Configuration Examples
 
-**Parameters:**
-- `rules`: PointCloudValidationRules object
-  - `min_points`: Minimum acceptable point count
-  - `max_points`: Maximum acceptable point count
-  - `check_nan`: Detect NaN values
-  - `check_inf`: Detect Inf values
-  - `coord_range_min/max`: Coordinate bounds
-  - `fail_fast`: Stop on first error
-- `raise_on_invalid`: Raise exception on validation failure
+The `configs/` directory contains YAML pipeline configurations you can customize.
 
-**Example:**
+## Creating Custom Pipelines
+
+### 1. Setup observability
+
 ```python
-rules = PointCloudValidationRules(
-    min_points=1000,
-    check_nan=True,
-    check_inf=True
-)
-validator = PointCloudValidationStage(name="validator", rules=rules)
-result = validator.run({"points": points_array})
-# result contains: is_valid, validation_errors, metrics
+from pathlib import Path
+from viz_art.performance import create_profiler, create_metrics_storage
+from viz_art.audit import create_logger, create_run_tracker
+
+output_dir = Path("output")
+
+# Performance profiling
+metrics_storage = create_metrics_storage(output_dir / "metrics", retention_days=90)
+profiler = create_profiler(storage=metrics_storage)
+
+# Run tracking
+tracker = create_run_tracker(output_dir / "runs")
 ```
 
-#### `pointcloud_visualization.py`
-Generate interactive 3D Plotly visualizations.
+### 2. Track your pipeline run
 
-**Parameters:**
-- `color_mode`: "height", "intensity", "rgb", "class"
-- `point_size`: Point size in pixels
-- `opacity`: Transparency [0,1]
-- `colorscale`: Plotly colorscale name
-- `max_render_points`: Auto-downsample threshold
-- `output_html`: Save HTML file
-- `output_json`: Save JSON file
-
-**Example:**
 ```python
-visualizer = PointCloudVisualizationStage(
-    name="viz",
-    color_mode="height",
-    output_html=True
-)
-result = visualizer.run({"points": points, "colors": colors})
+config_snapshot = {
+    "pipeline": "my_pipeline",
+    "version": "1.0",
+    "param": "value"
+}
+
+with tracker.track(config_snapshot, input_files, output_dir) as run_id:
+    logger = create_logger(run_id, output_dir / "logs")
+
+    logger.info("Pipeline started")
+
+    # Your pipeline code here
+    with profiler.measure("stage_name"):
+        result = process_data()
+
+    logger.info("Pipeline completed", items_processed=len(result))
 ```
 
-#### `pointcloud_projection.py`
-Project 3D point clouds onto 2D images.
+### 3. Query results
 
-**Parameters:**
-- `calibration_path`: Path to YAML calibration file
-- `color_mode`: "depth", "rgb", "intensity"
-- `point_radius`: Rendered point radius (pixels)
-- `opacity`: Blending opacity [0,1]
-- `z_threshold`: Minimum Z distance (meters)
-
-**Example:**
-```python
-projection = PointCloudProjectionStage(
-    name="projection",
-    calibration_path="calibration/camera.yaml",
-    color_mode="depth"
-)
-result = projection.run({"image": image, "points": points_3d})
-```
-
-#### `pointcloud_thumbnail.py`
-Generate static thumbnail images from multiple viewpoints.
-
-**Parameters:**
-- `viewpoints`: List of viewpoints ("front", "top", "side", "diagonal")
-- `width`: Thumbnail width (pixels)
-- `height`: Thumbnail height (pixels)
-- `point_size`: Point size (pixels)
-- `background_color`: RGB background color
-
-**Example:**
-```python
-thumbnail_gen = PointCloudThumbnailStage(
-    name="thumbnail",
-    viewpoints=["diagonal", "front", "top"]
-)
-result = thumbnail_gen.run({"points": points, "colors": colors})
-```
-
-#### `multimodal_loader.py`
-Load synchronized image and point cloud pairs.
-
-**Parameters:**
-- `sync_tolerance_ms`: Maximum time delta for synchronization
-- `require_both`: Enforce both modalities present
-- `load_colors`: Load point cloud colors
-- `load_normals`: Load point cloud normals
-
-**Example:**
-```python
-loader = MultiModalLoaderStage(
-    name="multimodal",
-    sync_tolerance_ms=100.0,
-    require_both=True
-)
-result = loader.run({
-    "image_path": "image.jpg",
-    "pointcloud_path": "cloud.pcd",
-    "image_timestamp": "2025-10-22T10:30:00.000",
-    "pointcloud_timestamp": "2025-10-22T10:30:00.050"
-})
-# result contains: is_synchronized, time_delta_ms, metadata
-```
-
-## Example Configurations
-
-The `configs/` directory contains YAML pipeline configurations:
-
-### `pointcloud_simple.yaml`
-Basic point cloud loading and validation pipeline.
-
-### `multimodal_stages.yaml`
-Multi-modal pipeline with image and point cloud stages.
-
-### `validation_strict.yaml`
-Strict validation rules for quality checks.
-
-### `batch_pointclouds.yaml`
-Batch processing with thumbnail generation.
-
-**Usage:**
 ```bash
-# Run with config file
-viz-art-cli run --config configs/pointcloud_simple.yaml
+# View all logs for this run
+viz-art-logs --run-id <run-id>
+
+# View performance metrics
+viz-art-metrics --stage stage_name
 ```
 
-## Calibration Files
+## Performance Targets
 
-The `calibration/` directory contains example camera calibration files:
-
-### `camera.yaml`
-Sample calibration with intrinsic and extrinsic parameters.
-
-**Format:**
-```yaml
-camera_name: "front_camera"
-intrinsics:
-  fx: 525.0
-  fy: 525.0
-  cx: 319.5
-  cy: 239.5
-  width: 640
-  height: 480
-  distortion_coeffs: [0.0, 0.0, 0.0, 0.0, 0.0]
-extrinsics:
-  rotation_matrix:
-    - [1.0, 0.0, 0.0]
-    - [0.0, 1.0, 0.0]
-    - [0.0, 0.0, 1.0]
-  translation_vector: [0.0, 0.0, 0.0]
-```
-
-## Performance Notes
+Based on Phase 2 specifications:
 
 - **Loading**: 100K points in < 5s (SC-001)
 - **Visualization**: 30+ FPS for 500K points (SC-002)
 - **Thumbnails**: < 3s per cloud (SC-006)
-- **Caching**: 10-100x speedup on repeated renders
 - **Projection**: < 2px accuracy (SC-004)
 
 ## Troubleshooting
 
-### Open3D Installation Issues
-
+### "No sample data found"
+Run the data creation script:
 ```bash
-# Try upgrading pip first
-pip install --upgrade pip
-
-# Install Open3D
-pip install open3d --no-cache-dir
-
-# Alternative: use conda
-conda install -c open3d-admin open3d
+python examples/data/create_sample_data.py
 ```
 
-### WebGL Performance Issues
+### "Module not found" errors
+Always use `uv run`:
+```bash
+uv run python examples/demo_simple.py
+```
 
-If interactive viewers are slow (< 30 FPS):
-- Reduce `max_render_points` to 100K-200K
-- Enable `auto_downsample` in VisualizationConfig
-- Check browser supports WebGL 2.0
+### Open3D installation issues
+```bash
+pip install --upgrade pip
+pip install open3d --no-cache-dir
+```
 
-### Headless Rendering
-
-For thumbnail generation on servers without display:
-
+### Headless rendering (servers without display)
 ```bash
 # Install xvfb (Linux)
 apt-get install xvfb
 
-# Run with xvfb
-xvfb-run python examples/test_batch_thumbnails.py
+# Run with virtual display
+xvfb-run python examples/test_visualization.py
+```
+
+## Directory Structure
+
+```
+examples/
+├── data/                        # Sample data and generation scripts
+│   ├── create_sample_data.py
+│   ├── sample_*.jpg             # Generated sample images
+│   └── cloud_*.npy              # Generated sample point clouds
+├── stages/                      # Reusable pipeline stage implementations
+│   ├── image_*.py
+│   ├── pointcloud_*.py
+│   └── multimodal_loader.py
+├── configs/                     # YAML pipeline configurations
+├── calibration/                 # Camera calibration files
+├── output/                      # Generated outputs (gitignored)
+│   └── <demo_name>/
+│       ├── metrics/
+│       ├── logs/
+│       └── runs/
+├── demo_simple.py               # ⭐ Main demo
+├── test_validation.py           # Validation testing
+├── test_visualization.py        # Visualization testing
+└── README.md                    # This file
 ```
 
 ## Next Steps
 
-1. Try the example scripts to understand the API
-2. Modify example configs for your use case
-3. Implement custom stages by extending `PipelineStage`
-4. See [specs/002-multimodal-viz/](../specs/002-multimodal-viz/) for detailed documentation
-
-## Support
-
-- Documentation: [specs/002-multimodal-viz/quickstart.md](../specs/002-multimodal-viz/quickstart.md)
-- API Reference: [specs/002-multimodal-viz/contracts/](../specs/002-multimodal-viz/contracts/)
-- Issues: GitHub Issues
+1. ✅ Run `demo_simple.py` to see Phase 3 features
+2. 📁 Explore outputs in `examples/output/simple_demo/`
+3. 🔍 Use CLI tools (`viz-art-logs`, `viz-art-metrics`)
+4. 🛠️ Create custom pipelines using stage library
+5. 📖 Read detailed specs:
+   - [Phase 3: Observability](../specs/003-multimodal-viz-phase3/)
+   - [Phase 2: Multi-modal](../specs/002-multimodal-viz/)
+   - [Phase 1: Base Architecture](../specs/001-base-pipeline-arch/)

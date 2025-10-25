@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batch Processing Report - {{ batch_result.batch_id }}</title>
+    <style>
+        /* Professional inline CSS for offline viewing */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #1f2937;
+            background-color: #f9fafb;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Professional header - solid color, no gradient */
+        .header {
+            background: #2563eb;
+            color: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .header p {
+            opacity: 0.95;
+            font-size: 0.95em;
+        }
+
+        /* Stats cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            text-align: center;
+        }
+
+        .stat-card .stat-value {
+            font-size: 2.5em;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .stat-card .stat-label {
+            color: #6b7280;
+            font-size: 0.875em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+
+        .stat-card.success .stat-value { color: #059669; }
+        .stat-card.error .stat-value { color: #dc2626; }
+        .stat-card.total .stat-value { color: #2563eb; }
+        .stat-card.duration .stat-value { color: #7c3aed; font-size: 2em; }
+
+        /* Section styling */
+        .section {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .section-header {
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .section-header h2 {
+            font-size: 1.5em;
+            color: #111827;
+            font-weight: 600;
+        }
+
+        .section-header p {
+            color: #6b7280;
+            margin-top: 4px;
+            font-size: 0.9em;
+        }
+
+        /* Collapsible toggle button */
+        .toggle-btn {
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            color: #4b5563;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875em;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .toggle-btn:hover {
+            background: #e5e7eb;
+        }
+
+        .toggle-btn.collapsed::before {
+            content: "▶ ";
+        }
+
+        .toggle-btn.expanded::before {
+            content: "▼ ";
+        }
+
+        /* Collapsible content */
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .collapsible-content.expanded {
+            max-height: 10000px;
+            transition: max-height 0.5s ease-in;
+        }
+
+        /* Stage groups */
+        .stage-group {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 6px;
+        }
+
+        .stage-header {
+            background: #4b5563;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .stage-toggle {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+
+        /* Image grid */
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .image-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            overflow: hidden;
+            background: white;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .image-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .image-card img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            display: block;
+            background: #f3f4f6;
+        }
+
+        .image-card .card-body {
+            padding: 15px;
+        }
+
+        .image-card .image-name {
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 8px;
+            word-break: break-word;
+        }
+
+        .image-card .image-meta {
+            font-size: 0.85em;
+            color: #6b7280;
+        }
+
+        /* Per-image results */
+        .per-image-section {
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .per-image-header {
+            background: #f9fafb;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .per-image-header h4 {
+            color: #111827;
+            font-size: 1em;
+            font-weight: 600;
+        }
+
+        .stage-outputs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            padding: 20px;
+        }
+
+        .output-item {
+            background: #f9fafb;
+            padding: 12px;
+            border-radius: 4px;
+            border-left: 3px solid #2563eb;
+        }
+
+        .output-item .output-stage {
+            font-weight: 600;
+            color: #2563eb;
+            margin-bottom: 4px;
+            font-size: 0.9em;
+        }
+
+        .output-item .output-keys {
+            font-size: 0.8em;
+            color: #6b7280;
+        }
+
+        /* Badges */
+        .success-badge {
+            display: inline-block;
+            background: #059669;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .error-badge {
+            display: inline-block;
+            background: #dc2626;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        /* Error cards */
+        .error-card {
+            border-color: #fca5a5;
+            background: #fef2f2;
+        }
+
+        .error-message {
+            color: #991b1b;
+            font-family: monospace;
+            font-size: 0.85em;
+            background: white;
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 10px;
+            word-break: break-word;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #6b7280;
+            font-size: 0.875em;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #9ca3af;
+        }
+
+        /* Point Cloud Gallery Styles */
+        .pointcloud-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .pointcloud-item {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .pointcloud-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        .pointcloud-thumbnail {
+            width: 100%;
+            height: 280px;
+            object-fit: cover;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .pointcloud-thumbnail:hover {
+            opacity: 0.9;
+        }
+
+        .pointcloud-info {
+            padding: 18px;
+        }
+
+        .pointcloud-title {
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 8px;
+            font-size: 1em;
+            word-break: break-word;
+        }
+
+        .pointcloud-stage {
+            display: inline-block;
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+
+        .pointcloud-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .pointcloud-btn {
+            flex: 1;
+            padding: 8px 12px;
+            background: #2563eb;
+            color: white;
+            text-align: center;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.875em;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .pointcloud-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .pointcloud-badge {
+            display: inline-block;
+            background: #059669;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+    </style>
+    <script>
+        // Toggle collapsible sections
+        function toggleSection(id) {
+            const content = document.getElementById(id);
+            const btn = document.getElementById(id + '-btn');
+
+            if (content.classList.contains('expanded')) {
+                content.classList.remove('expanded');
+                btn.classList.remove('expanded');
+                btn.classList.add('collapsed');
+            } else {
+                content.classList.add('expanded');
+                btn.classList.add('expanded');
+                btn.classList.remove('collapsed');
+            }
+        }
+
+        // Initialize all sections as collapsed except summary
+        window.addEventListener('DOMContentLoaded', function() {
+            // Expand only the first section by default
+            const firstContent = document.querySelector('.collapsible-content');
+            const firstBtn = document.querySelector('.toggle-btn');
+            if (firstContent && firstBtn) {
+                firstContent.classList.add('expanded');
+                firstBtn.classList.add('expanded');
+            }
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Batch Processing Report</h1>
+            <p>Batch ID: {{ batch_result.batch_id }}</p>
+            <p>Pipeline: {{ pipeline_name }}</p>
+        </div>
+
+        <!-- Summary Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card total">
+                <div class="stat-value">{{ batch_result.total_files }}</div>
+                <div class="stat-label">Total Images</div>
+            </div>
+            <div class="stat-card success">
+                <div class="stat-value">{{ batch_result.successful }}</div>
+                <div class="stat-label">Successful</div>
+            </div>
+            <div class="stat-card error">
+                <div class="stat-value">{{ batch_result.failed }}</div>
+                <div class="stat-label">Failed</div>
+            </div>
+            <div class="stat-card duration">
+                <div class="stat-value">{{ "%.2f"|format(duration_seconds) }}s</div>
+                <div class="stat-label">Duration</div>
+            </div>
+        </div>
+
+        <!-- Stage-Grouped View -->
+        {% if stages_data %}
+        <div class="section">
+            <div class="section-header" onclick="toggleSection('stage-grouped')">
+                <div>
+                    <h2>Stage-Grouped View</h2>
+                    <p>All images organized by pipeline stage outputs</p>
+                </div>
+                <button class="toggle-btn expanded" id="stage-grouped-btn">Show/Hide</button>
+            </div>
+            <div class="collapsible-content expanded" id="stage-grouped">
+                {% for stage_name, images in stages_data.items() %}
+                <div class="stage-group">
+                    <div class="stage-header" onclick="toggleSection('stage-{{ loop.index }}')">
+                        <span>{{ stage_name }}</span>
+                        <span class="stage-toggle" id="stage-{{ loop.index }}-btn">▼ {{ images|length }} images</span>
+                    </div>
+                    <div class="collapsible-content expanded" id="stage-{{ loop.index }}">
+                        <div class="image-grid">
+                            {% for image_data in images %}
+                            <div class="image-card">
+                                {% if image_data.success %}
+                                    <div class="card-body">
+                                        {% if image_data.is_pointcloud %}
+                                            <!-- Point Cloud Thumbnail -->
+                                            {% if image_data.thumbnail_path %}
+                                                <a href="{{ image_data.viewer_path }}" target="_blank" style="text-decoration: none;">
+                                                    <img src="{{ image_data.thumbnail_path }}"
+                                                         alt="{{ image_data.filename }}"
+                                                         style="max-width: 100%; height: auto; border-radius: 4px; margin-bottom: 10px; cursor: pointer;">
+                                                    <div style="text-align: center; color: #2563eb; font-size: 0.85em; margin-top: -5px; margin-bottom: 10px;">
+                                                        🔗 Click to open 3D viewer
+                                                    </div>
+                                                </a>
+                                            {% endif %}
+                                            <div class="image-name">{{ image_data.filename }}</div>
+                                            <div class="image-meta">
+                                                <span class="success-badge">✓ Point Cloud</span>
+                                            </div>
+                                        {% else %}
+                                            <!-- Regular Image -->
+                                            {% if image_data.image_path %}
+                                                <img src="{{ image_data.image_path }}" alt="{{ image_data.filename }}" style="max-width: 100%; height: auto; border-radius: 4px; margin-bottom: 10px;">
+                                            {% endif %}
+                                            <div class="image-name">{{ image_data.filename }}</div>
+                                            <div class="image-meta">
+                                                <span class="success-badge">✓ Success</span>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    <div class="card-body error-card">
+                                        <div class="image-name">{{ image_data.filename }}</div>
+                                        <div class="image-meta">
+                                            <span class="error-badge">✗ Failed</span>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Point Cloud Gallery View -->
+        {% set pointcloud_items = [] %}
+        {% for stage_name, images in stages_data.items() %}
+            {% for image_data in images %}
+                {% if image_data.is_pointcloud and image_data.thumbnail_path %}
+                    {% set _ = pointcloud_items.append(image_data) %}
+                {% endif %}
+            {% endfor %}
+        {% endfor %}
+
+        {% if pointcloud_items|length > 0 %}
+        <div class="section">
+            <div class="section-header" onclick="toggleSection('pointcloud-gallery')">
+                <div>
+                    <h2>Point Cloud Gallery</h2>
+                    <p>Interactive 3D visualizations of all point cloud outputs</p>
+                </div>
+                <button class="toggle-btn collapsed" id="pointcloud-gallery-btn">Show/Hide</button>
+            </div>
+            <div class="collapsible-content" id="pointcloud-gallery">
+                <div class="pointcloud-gallery">
+                    {% for item in pointcloud_items %}
+                    <div class="pointcloud-item">
+                        <a href="{{ item.viewer_path }}" target="_blank">
+                            <img src="{{ item.thumbnail_path }}"
+                                 alt="{{ item.filename }}"
+                                 class="pointcloud-thumbnail">
+                        </a>
+                        <div class="pointcloud-info">
+                            <div class="pointcloud-title">{{ item.filename }}</div>
+                            <span class="pointcloud-stage">{{ item.stage_name }}</span>
+                            <span class="pointcloud-badge">3D</span>
+                            <div class="pointcloud-actions">
+                                <a href="{{ item.viewer_path }}" target="_blank" class="pointcloud-btn">
+                                    🔍 Open 3D Viewer
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Per-Image Complete View -->
+        <div class="section">
+            <div class="section-header" onclick="toggleSection('per-image')">
+                <div>
+                    <h2>Per-Image Results</h2>
+                    <p>Complete pipeline outputs for each processed image</p>
+                </div>
+                <button class="toggle-btn collapsed" id="per-image-btn">Show/Hide</button>
+            </div>
+            <div class="collapsible-content" id="per-image">
+                {% if batch_result.run_results %}
+                    {% for run in batch_result.run_results %}
+                    <div class="per-image-section">
+                        <div class="per-image-header" onclick="toggleSection('image-{{ loop.index }}')">
+                            <h4>{{ (run.inputs.image_path | default(run.inputs.pointcloud_path | default(run.inputs.file_path))) | basename }}</h4>
+                            {% if run.status.value == "completed" %}
+                            <span class="success-badge">{{ run.status.value | upper }}</span>
+                            {% else %}
+                            <span class="error-badge">{{ run.status.value | upper }}</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="collapsible-content" id="image-{{ loop.index }}">
+                            {% if run.status.value == "completed" %}
+                            <div class="stage-outputs">
+                                {% for stage_name, outputs in run.outputs.items() %}
+                                {% if not stage_name.startswith('_') %}
+                                <div class="output-item">
+                                    <div class="output-stage">{{ stage_name }}</div>
+                                    <div class="output-keys">
+                                        {% if outputs is mapping %}
+                                            {{ outputs.keys() | list | join(', ') }}
+                                        {% else %}
+                                            Output available
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="error-message">
+                                {{ run.error }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <div class="empty-state">
+                    <p>No images were processed</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Error Summary -->
+        {% if batch_result.failed > 0 %}
+        <div class="section">
+            <div class="section-header" onclick="toggleSection('errors')">
+                <div>
+                    <h2>Error Summary</h2>
+                    <p>{{ batch_result.failed }} image(s) failed to process</p>
+                </div>
+                <button class="toggle-btn collapsed" id="errors-btn">Show/Hide</button>
+            </div>
+            <div class="collapsible-content" id="errors">
+                {% for run in batch_result.run_results %}
+                    {% if run.status.value == "failed" %}
+                    <div class="error-card image-card" style="margin-bottom: 15px;">
+                        <div class="card-body">
+                            <div class="image-name">{{ (run.inputs.image_path | default(run.inputs.pointcloud_path | default(run.inputs.file_path))) | basename }}</div>
+                            <div class="error-message">
+                                {{ run.error }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Performance Metrics -->
+        {% if phase3_metrics %}
+        <div class="section">
+            <div class="section-header" onclick="toggleSection('performance')">
+                <div>
+                    <h2>⏱️ Performance Metrics</h2>
+                    <p>Execution time and memory usage analysis</p>
+                </div>
+                <button class="toggle-btn collapsed" id="performance-btn">Show/Hide</button>
+            </div>
+            <div class="collapsible-content" id="performance">
+                {% if phase3_metrics.timing_chart %}
+                <div style="margin: 20px 0; padding: 20px; background: white; border-radius: 6px; border: 1px solid #e5e7eb;">
+                    <h3 style="color: #1f2937; margin-top: 0;">Stage Execution Times</h3>
+                    {{ phase3_metrics.timing_chart | safe }}
+                </div>
+                {% endif %}
+
+                {% if phase3_metrics.memory_chart %}
+                <div style="margin: 20px 0; padding: 20px; background: white; border-radius: 6px; border: 1px solid #e5e7eb;">
+                    <h3 style="color: #1f2937; margin-top: 0;">Memory Usage</h3>
+                    {{ phase3_metrics.memory_chart | safe }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Ground Truth Validation -->
+        {% if phase3_validation %}
+        <div class="section">
+            <div class="section-header" onclick="toggleSection('validation')">
+                <div>
+                    <h2>🎯 Ground Truth Validation</h2>
+                    <p>Accuracy metrics and error analysis</p>
+                </div>
+                <button class="toggle-btn collapsed" id="validation-btn">Show/Hide</button>
+            </div>
+            <div class="collapsible-content" id="validation">
+                <div class="stats-grid" style="margin: 20px 0;">
+                    <div class="stat-card">
+                        <div class="stat-value" style="color: #059669;">{{ "%.1f%%"|format(phase3_validation.precision * 100) }}</div>
+                        <div class="stat-label">Precision</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" style="color: #059669;">{{ "%.1f%%"|format(phase3_validation.recall * 100) }}</div>
+                        <div class="stat-label">Recall</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" style="color: #2563eb;">{{ "%.1f%%"|format(phase3_validation.f1_score * 100) }}</div>
+                        <div class="stat-label">F1 Score</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" style="color: #7c3aed;">{{ phase3_validation.total_objects }}</div>
+                        <div class="stat-label">Total Objects</div>
+                    </div>
+                </div>
+
+                {% if phase3_validation.errors %}
+                <div style="margin: 20px 0;">
+                    <h3 style="color: #1f2937;">Error Analysis ({{ phase3_validation.errors|length }} issues)</h3>
+                    {% for error in phase3_validation.errors %}
+                    <div style="margin: 10px 0; padding: 12px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                        <strong>{{ error.image_id }}</strong>: {{ error.type | replace('_', ' ') | title }}<br>
+                        <span style="color: #666; font-size: 0.9em;">Predicted: {{ error.predicted }}, Expected: {{ error.expected }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Audit Logs -->
+        {% if phase3_logs %}
+        <div class="section">
+            <div class="section-header" onclick="toggleSection('audit-logs')">
+                <div>
+                    <h2>📝 Audit Logs</h2>
+                    <p>{{ phase3_logs|length }} structured log entries</p>
+                </div>
+                <button class="toggle-btn collapsed" id="audit-logs-btn">Show/Hide</button>
+            </div>
+            <div class="collapsible-content" id="audit-logs">
+                {% for log in phase3_logs[-10:] %}
+                {% set level = log.record.level.name %}
+                {% set level_color = {'INFO': '#2196F3', 'WARNING': '#FF9800', 'ERROR': '#F44336'}.get(level, '#666') %}
+                <div style="margin: 8px 0; padding: 10px; background: #f8f9fa; border-left: 3px solid {{ level_color }}; border-radius: 4px; font-size: 0.9em;">
+                    <strong style="color: {{ level_color }};">{{ level }}</strong>: {{ log.record.message }}
+                    {% if log.record.extra %}
+                    <div style="color: #666; font-size: 0.85em; margin-top: 4px; font-family: monospace;">
+                        {{ log.record.extra }}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Footer -->
+        <footer>
+            <p>Generated on {{ batch_result.completed_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}</p>
+            <p>viz-art Batch Processing Report</p>
+        </footer>
+    </div>
+</body>
+</html>

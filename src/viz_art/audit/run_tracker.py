@@ -85,7 +85,7 @@ class RunTracker:
         metadata_file = run_dir / "run_metadata.json"
 
         with open(metadata_file, 'w') as f:
-            f.write(run.json(indent=2))
+            f.write(run.model_dump_json(indent=2))
 
         try:
             yield run_id
@@ -98,7 +98,7 @@ class RunTracker:
 
             # Save updated metadata
             with open(metadata_file, 'w') as f:
-                f.write(run.json(indent=2))
+                f.write(run.model_dump_json(indent=2))
 
         except Exception as e:
             # T072: Update status to FAILED on exception with error message
@@ -109,7 +109,7 @@ class RunTracker:
 
             # Save updated metadata
             with open(metadata_file, 'w') as f:
-                f.write(run.json(indent=2))
+                f.write(run.model_dump_json(indent=2))
 
             # Re-raise exception
             raise

@@ -33,12 +33,13 @@ class Pipeline:
         connections: List of stage connections defining data flow
     """
 
-    def __init__(self, name: str, config: Optional[Any] = None):
+    def __init__(self, name: str, config: Optional[Any] = None, profiler: Optional[Any] = None):
         """Initialize pipeline.
 
         Args:
             name: Unique pipeline identifier
             config: Optional configuration object (for future use)
+            profiler: Optional performance profiler for stage-level metrics
 
         Raises:
             ValueError: If name is empty or invalid
@@ -48,6 +49,7 @@ class Pipeline:
 
         self.name = name.strip()
         self.config = config
+        self.profiler = profiler
         self._stages: List[PipelineStage] = []
         self._stage_map: Dict[str, PipelineStage] = {}
         self._connections: List[StageConnection] = []
@@ -240,10 +242,16 @@ class Pipeline:
                         stage, available_data, all_outputs
                     )
 
-                    # Execute stage
-                    preprocessed = stage.pre_process(stage_inputs)
-                    predictions = stage.predict(preprocessed)
-                    outputs = stage.post_process(predictions)
+                    # Execute stage (with profiling if available)
+                    if self.profiler:
+                        with self.profiler.measure(stage.name):
+                            preprocessed = stage.pre_process(stage_inputs)
+                            predictions = stage.predict(preprocessed)
+                            outputs = stage.post_process(predictions)
+                    else:
+                        preprocessed = stage.pre_process(stage_inputs)
+                        predictions = stage.predict(preprocessed)
+                        outputs = stage.post_process(predictions)
 
                     # Calculate duration
                     stage_end = datetime.utcnow()
