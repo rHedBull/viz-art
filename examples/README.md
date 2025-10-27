@@ -39,12 +39,31 @@ uv run python examples/demo_comprehensive.py
   - ✅ Comprehensive HTML report (25KB with embedded charts)
 - Best for: Seeing the complete Phase 3 system
 
+**Option C: Batch Processing with Accuracy Tracking** 🆕 **FULL STACK**
+```bash
+uv run python examples/demo_batch_with_phase3.py
+```
+- Runtime: ~2 seconds
+- Features: **Complete pipeline with accuracy tracking**
+  - ✅ Batch processing with per-stage profiling
+  - ✅ Performance charts (timing + memory)
+  - ✅ Accuracy tracking with beautiful HTML reports
+  - ✅ Error detection and analysis
+  - ✅ Per-stage accuracy metrics with Plotly visualizations
+  - ✅ Historical trend tracking support
+  - ✅ Two HTML reports: batch report + accuracy report
+- Best for: Production-ready workflow demonstration
+
 ## Output Structure
 
 All demo scripts create outputs in this structure:
 
 ```
 examples/output/<demo_name>/
+├── accuracy/                    # Accuracy tracking reports (NEW!)
+│   └── <run_id>_accuracy_report.html  # Beautiful gradient report with Plotly charts
+├── ground_truth/                # Ground truth dataset
+│   └── annotations/
 ├── metrics/                     # Performance metrics (Parquet)
 │   ├── image_processing.parquet
 │   └── pointcloud_processing.parquet
@@ -54,6 +73,67 @@ examples/output/<demo_name>/
     └── <run-id>/
         └── run_metadata.json
 ```
+
+## Phase 4: Accuracy Tracking & Error Analysis 🆕
+
+### Overview
+
+The accuracy tracking system provides comprehensive validation against ground truth with beautiful HTML reports.
+
+**Key Features:**
+- ✅ Per-stage accuracy metrics (classification, detection, segmentation, point clouds)
+- ✅ Automatic error detection and severity classification
+- ✅ Beautiful gradient-themed HTML reports with embedded Plotly charts
+- ✅ Error pattern clustering and analysis
+- ✅ Historical trend tracking and regression detection
+- ✅ Side-by-side visualizations (prediction vs ground truth)
+
+### Usage Example
+
+```python
+from viz_art.accuracy import AccuracyTracker, GroundTruthDataset, AnnotationFormat
+
+# 1. Create ground truth dataset
+dataset = GroundTruthDataset(
+    dataset_id="validation_001",
+    name="Validation Set",
+    base_path=Path("data/images"),
+    annotation_path=Path("data/annotations"),
+    annotation_format=AnnotationFormat.COCO,
+    num_samples=100,
+    sample_ids=[f"sample_{i:04d}" for i in range(100)]
+)
+
+# 2. Run validation
+tracker = AccuracyTracker(dataset)
+results = tracker.run_validation(
+    predictions={"stage_name": [predictions_list]},
+    run_id="run_001",
+    output_dir=Path("output/accuracy"),
+    stage_task_types={"stage_name": "classification"}
+)
+
+# 3. View results
+print(f"Overall accuracy: {results['overall_accuracy']:.2%}")
+print(f"Report: {results['report_path']}")
+print(f"Errors detected: {len(results['errors'])}")
+```
+
+### Generated Reports
+
+**Accuracy Report** (`<run_id>_accuracy_report.html`):
+- Overall accuracy metrics with gradient header
+- Per-stage performance breakdown
+- Interactive Plotly charts (bar charts, per-class metrics)
+- Color-coded status indicators (✓ pass, ⚠ warn, ✗ fail)
+- Links to error browser and historical trends
+
+**Report Features:**
+- Self-contained HTML (no server required)
+- Embedded Plotly.js for interactive charts
+- Beautiful gradient design with hover effects
+- Responsive layout for all screen sizes
+- ~19KB file size with full styling
 
 ## Phase 3 Observability Features
 
