@@ -1,6 +1,6 @@
 # viz-art Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2025-10-22
+Auto-generated from all feature plans. Last updated: 2025-10-27
 
 ## Active Technologies
 - Python 3.8+ (matches existing codebase) (002-multimodal-viz)
@@ -74,6 +74,7 @@ print(f"Errors detected: {len(results['errors'])}")
 - ✅ Side-by-side visualizations (images, point clouds, masks)
 - ✅ Historical trend tracking with regression detection
 - ✅ Beautiful HTML reports with Plotly charts
+- ✅ Integrated into batch reports (Phase 4 section with per-stage metrics)
 - ✅ Export to JSON/CSV/Parquet
 
 ### Testing
@@ -95,5 +96,32 @@ pytest tests/integration/test_trends.py -v
 - Error clustering: < 15ms for 1000 errors
 - Image visualization: < 2 seconds
 - Point cloud visualization: < 5 seconds
+
+### Integrated Reporting
+
+The accuracy tracking system integrates seamlessly with batch reports:
+
+**Batch Report Structure** (`batch_report.html` - 62KB):
+- Phase 2: Stage-by-stage image processing views
+- Phase 3: Performance charts (timing + memory), audit logs
+- **Phase 4: Accuracy Tracking & Analysis** (NEW)
+  - Overall accuracy cards
+  - Per-stage accuracy breakdown
+  - Metrics display (F1 Score, Precision, Recall, etc.)
+  - Link to detailed standalone accuracy report
+
+**Standalone Accuracy Report** (`<run_id>_accuracy_report.html` - 19KB):
+- Beautiful gradient-themed design
+- Interactive Plotly charts
+- Detailed per-stage metrics
+- Color-coded status indicators
+- Warning banners for low accuracy
+
+**Demo Script**: `examples/demo_batch_with_phase3.py`
+```bash
+python examples/demo_batch_with_phase3.py
+# Generates both batch report and accuracy report
+# Shows 66.7% accuracy with intentional errors for demonstration
+```
 
 <!-- MANUAL ADDITIONS END -->
