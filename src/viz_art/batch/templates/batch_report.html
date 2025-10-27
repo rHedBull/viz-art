@@ -745,6 +745,85 @@
         </div>
         {% endif %}
 
+        <!-- Phase 4: Accuracy Tracking -->
+        {% if accuracy_results %}
+        <div class="section">
+            <div class="section-header" onclick="toggleSection('accuracy')">
+                <div>
+                    <h2>📊 Accuracy Tracking & Analysis</h2>
+                    <p>Per-stage accuracy metrics and error analysis</p>
+                </div>
+                <button class="toggle-btn collapsed" id="accuracy-btn">Show/Hide</button>
+            </div>
+            <div class="collapsible-content" id="accuracy">
+                <div class="stats-grid" style="margin: 20px 0;">
+                    <div class="stat-card">
+                        <div class="stat-value" style="color: #667eea;">{{ "%.1f%%"|format(accuracy_results.overall_accuracy * 100) }}</div>
+                        <div class="stat-label">Overall Accuracy</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" style="color: #059669;">{{ accuracy_results.correct_count }}</div>
+                        <div class="stat-label">Correct Predictions</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" style="color: #dc2626;">{{ accuracy_results.wrong_count }}</div>
+                        <div class="stat-label">Wrong Predictions</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" style="color: #f59e0b;">{{ accuracy_results.errors|length if accuracy_results.errors else 0 }}</div>
+                        <div class="stat-label">Errors Detected</div>
+                    </div>
+                </div>
+
+                <!-- Per-Stage Metrics -->
+                {% if accuracy_results.stage_metrics %}
+                <div style="margin: 30px 0;">
+                    <h3 style="color: #1f2937; margin-bottom: 15px;">Per-Stage Accuracy</h3>
+                    {% for stage_name, metrics in accuracy_results.stage_metrics.items() %}
+                    <div style="margin: 15px 0; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <h4 style="color: #1f2937; margin: 0;">{{ stage_name }}</h4>
+                            <span style="font-size: 1.5em; font-weight: 600; color: #667eea;">
+                                {% if metrics %}
+                                    {{ "%.1f%%"|format((metrics[0].counts.correct / (metrics[0].counts.correct + metrics[0].counts.wrong) * 100) if (metrics[0].counts.correct + metrics[0].counts.wrong) > 0 else 0) }}
+                                {% endif %}
+                            </span>
+                        </div>
+                        {% if metrics %}
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 15px;">
+                            {% for metric in metrics %}
+                            <div style="background: white; padding: 12px; border-radius: 6px;">
+                                <div style="color: #666; font-size: 0.85em; margin-bottom: 4px;">{{ metric.metric_type.value.replace('_', ' ').title() }}</div>
+                                <div style="font-size: 1.3em; font-weight: 600; color: #333;">
+                                    {% if metric.metric_type.value == 'map' %}
+                                        {{ "%.1f"|format(metric.value) }}
+                                    {% elif metric.metric_type.value == 'chamfer_distance' %}
+                                        {{ "%.3f"|format(metric.value) }}
+                                    {% else %}
+                                        {{ "%.1f%%"|format(metric.value * 100) }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Link to Full Report -->
+                <div style="margin: 30px 0; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px;">
+                    <h3 style="color: white; margin: 0 0 10px 0;">📈 Detailed Accuracy Report</h3>
+                    <p style="color: rgba(255,255,255,0.9); margin: 0 0 15px 0;">View the complete accuracy tracking report with interactive charts, error analysis, and historical trends.</p>
+                    <a href="accuracy/{{ accuracy_results.report_path|basename }}" style="display: inline-block; background: white; color: #667eea; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600;">
+                        View Full Accuracy Report →
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Audit Logs -->
         {% if phase3_logs %}
         <div class="section">

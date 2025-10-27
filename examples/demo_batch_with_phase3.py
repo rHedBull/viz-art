@@ -106,18 +106,36 @@ class ImageResizer(PipelineStage):
         return predictions
 
 
-def simulate_ground_truth_validation():
-    """Simulate ground truth validation metrics."""
-    return {
-        "precision": 0.85,
-        "recall": 0.82,
-        "f1_score": 0.835,
-        "total_objects": 15,
-        "errors": [
-            {"image_id": "sample_001", "type": "false_negative", "predicted": 4, "expected": 5},
-            {"image_id": "sample_002", "type": "false_positive", "predicted": 6, "expected": 5},
-        ],
-    }
+def create_mock_ground_truth_dataset(data_dir: Path, output_dir: Path):
+    """Create mock ground truth dataset for accuracy tracking."""
+    from viz_art.accuracy import GroundTruthDataset, AnnotationFormat
+    from datetime import datetime
+
+    # Find sample images
+    image_files = sorted(data_dir.glob("sample_*.jpg"))
+    sample_ids = [f"sample_{i:04d}" for i in range(len(image_files))]
+
+    # Create ground truth dataset
+    gt_dir = output_dir / "ground_truth"
+    gt_dir.mkdir(parents=True, exist_ok=True)
+    annotations_dir = gt_dir / "annotations"
+    annotations_dir.mkdir(parents=True, exist_ok=True)
+
+    dataset = GroundTruthDataset(
+        dataset_id="demo_dataset_001",
+        name="Demo Validation Set",
+        description="Mock dataset for demo with accuracy tracking",
+        base_path=data_dir,
+        annotation_path=annotations_dir,
+        annotation_format=AnnotationFormat.COCO,
+        num_samples=len(sample_ids),
+        sample_ids=sample_ids,
+        metadata={"demo": True, "task": "classification"},
+        created_at=datetime.now(),
+        updated_at=datetime.now()
+    )
+
+    return dataset, sample_ids
 
 
 def main():
@@ -249,8 +267,70 @@ def main():
         "memory_chart": memory_body.group(1) if memory_body else "",
     }
 
-    # Simulate ground truth validation
-    phase3_validation = simulate_ground_truth_validation()
+    # ==============================================================================
+    # Phase 4: Accuracy Tracking & Error Analysis
+    # ==============================================================================
+
+    print("\n📊 Running accuracy tracking & error analysis...\n")
+
+    # Create mock ground truth dataset
+    from viz_art.accuracy import AccuracyTracker, GroundTruthSample, AnnotationFormat
+
+    dataset, sample_ids = create_mock_ground_truth_dataset(data_dir, output_dir)
+
+    # Create mock predictions from batch results
+    predictions = {
+        "grayscale": [],  # Classification predictions for grayscale stage
+    }
+
+    # Simulate predictions (classify images as "light" or "dark")
+    for i, result in enumerate(batch_result.run_results):
+        # Mock classification: 0 = light, 1 = dark
+        predicted_class = i % 2  # Alternate for demo
+        predictions["grayscale"].append(predicted_class)
+
+    # Create mock ground truth loader
+    def mock_load_sample(dataset, sample_id):
+        # Parse index from sample_id
+        idx = int(sample_id.split("_")[1])
+        # Ground truth: intentionally mismatch some for error demo
+        # Pattern: predictions alternate (0, 1, 0, 1, ...)
+        # Ground truth: (0, 0, 1, 1, ...) - creates intentional errors
+        gt_class = 0 if idx < len(sample_ids) // 2 else 1
+
+        return GroundTruthSample(
+            sample_id=sample_id,
+            dataset_id=dataset.dataset_id,
+            stage_labels={"grayscale": gt_class},
+            final_label=gt_class,
+            annotation_format=AnnotationFormat.COCO,
+            image_path=data_dir / f"{sample_id}.jpg"
+        )
+
+    # Run accuracy tracking
+    tracker = AccuracyTracker(dataset)
+    tracker.gt_loader.load_sample = mock_load_sample
+
+    accuracy_results = tracker.run_validation(
+        predictions=predictions,
+        run_id=run_id,
+        output_dir=output_dir / "accuracy",
+        stage_task_types={"grayscale": "classification"}
+    )
+
+    print(f"✓ Accuracy tracking complete")
+    print(f"  ├─ Overall accuracy: {accuracy_results['overall_accuracy']:.1%}")
+    print(f"  ├─ Errors detected: {len(accuracy_results.get('errors', []))}")
+    print(f"  └─ Report: {accuracy_results['report_path']}\n")
+
+    # Extract validation metrics for batch report
+    phase3_validation = {
+        "precision": accuracy_results.get('overall_accuracy', 0.0),
+        "recall": accuracy_results.get('overall_accuracy', 0.0),
+        "f1_score": accuracy_results.get('overall_accuracy', 0.0),
+        "total_objects": len(sample_ids),
+        "errors": accuracy_results.get('errors', [])[:2],  # First 2 errors for summary
+    }
 
     # Load audit logs
     phase3_logs = []
@@ -276,6 +356,13 @@ def main():
     reporter = HTMLReporter()
     report_path = output_dir / "batch_report.html"
 
+    # Add counts to accuracy results for batch report
+    accuracy_results_with_counts = {
+        **accuracy_results,
+        'correct_count': sum(m.counts.correct for metrics in accuracy_results['stage_metrics'].values() for m in metrics),
+        'wrong_count': sum(m.counts.wrong for metrics in accuracy_results['stage_metrics'].values() for m in metrics),
+    }
+
     reporter.generate(
         batch_result=batch_result,
         output_path=report_path,
@@ -283,6 +370,7 @@ def main():
         phase3_metrics=phase3_metrics,
         phase3_validation=phase3_validation,
         phase3_logs=phase3_logs,
+        accuracy_results=accuracy_results_with_counts,
     )
 
     print(f"✓ Integrated report generated: {report_path}")
@@ -293,6 +381,7 @@ def main():
     print(f"  ✓ Phase 3: Performance charts (timing + memory)")
     print(f"  ✓ Phase 3: Ground truth validation metrics")
     print(f"  ✓ Phase 3: Audit log entries")
+    print(f"  ✓ Phase 4: Accuracy tracking report (separate file)")
 
     # ==============================================================================
     # Summary
@@ -303,11 +392,13 @@ def main():
     print("=" * 80)
     print(f"✓ Run ID: {run_id}")
     print(f"✓ Processed: {batch_result.successful}/{batch_result.total_files} images")
-    print(f"✓ Validation: Precision={phase3_validation['precision']:.1%}, Recall={phase3_validation['recall']:.1%}")
+    print(f"✓ Overall Accuracy: {accuracy_results['overall_accuracy']:.1%}")
+    print(f"✓ Errors Detected: {len(accuracy_results.get('errors', []))}")
     print(f"✓ All outputs: {output_dir}")
     print()
-    print("📁 View integrated report (Phase 2 + Phase 3):")
-    print(f"   open {report_path}")
+    print("📁 View reports:")
+    print(f"   Batch report (Phase 2 + Phase 3): open {report_path}")
+    print(f"   Accuracy report (Phase 4):        open {accuracy_results['report_path']}")
     print("=" * 80)
 
 

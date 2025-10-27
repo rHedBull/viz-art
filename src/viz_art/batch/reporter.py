@@ -75,6 +75,7 @@ class HTMLReporter:
         phase3_metrics: Optional[Dict[str, Any]] = None,
         phase3_validation: Optional[Dict[str, Any]] = None,
         phase3_logs: Optional[list] = None,
+        accuracy_results: Optional[Dict[str, Any]] = None,
     ) -> Path:
         """Generate HTML report from batch results with optional observability metrics.
 
@@ -87,6 +88,8 @@ class HTMLReporter:
             phase3_validation: Optional ground truth validation metrics
                               (dict with precision, recall, f1_score, errors list)
             phase3_logs: Optional audit log entries (list of log dicts)
+            accuracy_results: Optional accuracy tracking results from AccuracyTracker
+                            (dict with overall_accuracy, stage_metrics, errors, report_path)
 
         Returns:
             Absolute path to generated HTML file
@@ -117,7 +120,7 @@ class HTMLReporter:
             # Prepare data for template
             context = self._prepare_context(
                 batch_result, pipeline_name, output_path,
-                phase3_metrics, phase3_validation, phase3_logs
+                phase3_metrics, phase3_validation, phase3_logs, accuracy_results
             )
 
             # Render template
@@ -142,6 +145,7 @@ class HTMLReporter:
         phase3_metrics: Optional[Dict[str, Any]] = None,
         phase3_validation: Optional[Dict[str, Any]] = None,
         phase3_logs: Optional[list] = None,
+        accuracy_results: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Prepare template context from batch result.
 
@@ -152,6 +156,7 @@ class HTMLReporter:
             phase3_metrics: Optional Phase 3 performance metrics
             phase3_validation: Optional Phase 3 validation metrics
             phase3_logs: Optional Phase 3 audit logs
+            accuracy_results: Optional Phase 4 accuracy tracking results
 
         Returns:
             Dictionary with template variables
@@ -170,6 +175,7 @@ class HTMLReporter:
             "phase3_metrics": phase3_metrics,
             "phase3_validation": phase3_validation,
             "phase3_logs": phase3_logs,
+            "accuracy_results": accuracy_results,
         }
 
         return context
